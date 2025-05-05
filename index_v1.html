@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>n8n Chat POC</title>
+  <style>
+    body {
+      background-image: url('smartcommerce-web.png');
+      background-size: cover;        /* Deckt den ganzen Hintergrund ab */
+      background-repeat: no-repeat;  /* Kein Wiederholen */
+      background-position: top center;   /* Zentriert das Bild */
+      height: 12000px;                 /* Volle Höhe des Viewports */
+      margin: 0;                     /* Kein Standard-Abstand */
+
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    #n8n-chat-messages div{
+      padding: 0.25em;
+      margin-bottom: 0.25em;
+    }
+    .n8n-message-Nutzer{
+      background-color: rgb(252, 170, 30);
+      color: black;
+    }
+  </style>
+</head>
+<body>
+
+<!-- <iframe src="https://www.smartcommerce.de" width="800" height="600"></iframe> -->
+
+<div id="n8n-chat-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+  <button id="n8n-chat-button" style="background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">Chat starten</button>
+  <div id="n8n-chat-window" style="display: none; position: absolute; bottom: 60px; right: 0; width: 300px; background-color: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);">
+    <div style="padding: 10px; border-bottom: 1px solid #eee;">Smartie - KI-Bot</div>
+    <div id="n8n-chat-messages" style="padding: 10px; height: 200px; overflow-y: auto;"></div>
+    <div style="padding: 10px;">
+      <input type="text" id="n8n-chat-input" style="width: 90%; padding: 8px; border: 1px solid #ddd; border-radius: 3px;" placeholder="Deine Nachricht...">
+      <button id="n8n-chat-send" style="background-color: #28a745; color: white; border: none; padding: 8px 12px; border-radius: 3px; cursor: pointer; margin-top: 5px;">Senden</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const chatButton = document.getElementById('n8n-chat-button');
+  const chatWindow = document.getElementById('n8n-chat-window');
+  const chatMessages = document.getElementById('n8n-chat-messages');
+  const chatInput = document.getElementById('n8n-chat-input');
+  const chatSendButton = document.getElementById('n8n-chat-send');
+  const webhookUrl = 'https://n8n.s11e.io/webhook/573a1a03-4b5c-437c-8107-fdcbbbbac8e7/chat'; // Ersetze dies durch deine kopierte URL
+  const sessionId = Math.random().toString(36).substring(2, 15); // Eindeutige Session-ID
+
+  //Inital Welcome Message
+  addMessage("Smartie", "Guten Tag! Ich bin Smartie, Ihr professioneller KI-Assistent. Wie kann ich Ihnen heute behilflich sein?");
+  //DEV
+  //addMessage("Nutzer", "Hallo Smartie!");
+
+  chatButton.addEventListener('click', () => {
+    chatWindow.style.display = 'block';
+    chatButton.style.display = 'none';
+  });
+
+  chatSendButton.addEventListener('click', () => {
+    const message = chatInput.value;
+    if (message.trim() !== '') {
+      addMessage('Nutzer', message);
+      chatInput.value = '';
+      sendMessageToN8n(message);
+    }
+  });
+
+  chatInput.addEventListener('keypress', (event) => {
+    if (event.key === 'Enter' && chatInput.value.trim() !== '') {
+      chatSendButton.click();
+    }
+  });
+
+  function addMessage(sender, text) {
+
+    if(sender === "Smartie"){
+      text = convertMarkdownLinksToHtml(text);
+    }
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'n8n-message-' + sender;
+    messageDiv.innerHTML = `${sender}: ${text}`;
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+  }
+
+  function sendMessageToN8n(message) {
+    fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chatInput: message,
+        sessionId: sessionId
+      }),
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('data',data);
+        if (data && data[0] && data[0].json && data[0].json.response) {
+          addMessage('Smartie', data[0].json.response);
+        } else if (data && data.output) {
+          addMessage('Smartie', data.output);
+        } else {
+          addMessage('Smartie', 'Es gab ein Problem bei der Antwort.');
+        }
+      })
+      .catch(error => {
+        console.error('Fehler beim Senden der Nachricht an n8n:', error);
+        addMessage('Smartie', 'Verbindungsfehler.');
+      });
+  }
+
+  function convertMarkdownLinksToHtml(input) {
+    return input.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  }
+</script>
+</body>
+</html>
