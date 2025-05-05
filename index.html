@@ -74,9 +74,14 @@
   });
 
   function addMessage(sender, text) {
+
+    if(sender === "Smartie"){
+      text = convertMarkdownLinksToHtml(text);
+    }
+
     const messageDiv = document.createElement('div');
     messageDiv.className = 'n8n-message-' + sender;
-    messageDiv.textContent = `${sender}: ${text}`;
+    messageDiv.innerHTML = `${sender}: ${text}`;
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
   }
@@ -107,6 +112,10 @@
         console.error('Fehler beim Senden der Nachricht an n8n:', error);
         addMessage('Smartie', 'Verbindungsfehler.');
       });
+  }
+
+  function convertMarkdownLinksToHtml(input) {
+    return input.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
   }
 </script>
 </body>
