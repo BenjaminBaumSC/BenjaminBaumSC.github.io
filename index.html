@@ -48,9 +48,10 @@
   const webhookUrl = 'https://n8n.s11e.io/webhook/573a1a03-4b5c-437c-8107-fdcbbbbac8e7/chat'; // Ersetze dies durch deine kopierte URL
   const sessionId = Math.random().toString(36).substring(2, 15); // Eindeutige Session-ID
 
-  //DEV
+  //Inital Welcome Message
   addMessage("Smartie", "Guten Tag! Ich bin Smartie, Ihr professioneller KI-Assistent. Wie kann ich Ihnen heute behilflich sein?");
-  addMessage("Nutzer", "Hallo Smartie!");
+  //DEV
+  //addMessage("Nutzer", "Hallo Smartie!");
 
   chatButton.addEventListener('click', () => {
     chatWindow.style.display = 'block';
