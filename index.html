@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>n8n Chat POC</title>
+  <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css" rel="stylesheet" />
   <style>
     body {
       background-image: url('smartcommerce-web.png');
@@ -86,9 +87,9 @@
       --chat--toggle--width: var(--chat--toggle--size);
       --chat--toggle--height: var(--chat--toggle--size);
       --chat--toggle--border-radius: 50%;
-      --chat--toggle--background: var(--chat--color-primary);
-      --chat--toggle--hover--background: var(--chat--color-primary-shade-50);
-      --chat--toggle--active--background: var(--chat--color-primary-shade-100);
+      --chat--toggle--background: var(--sc-blue);
+      --chat--toggle--hover--background: var(--sc-yellow);
+      --chat--toggle--active--background: var(--sc-yellow);
       --chat--toggle--color: var(--chat--color-white);
 
       /* Input Area */
@@ -139,8 +140,6 @@
   </style>
 </head>
 <body>
-
-<link href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css" rel="stylesheet" />
 <script type="module">
   import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
 
