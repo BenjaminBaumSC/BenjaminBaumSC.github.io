@@ -8,6 +8,10 @@ import * as hello from './rewards/hello.js';
 import * as ninja from './rewards/ninja.js';
 import * as cake from './rewards/cake.js';
 import * as approved from './rewards/approved.js';
+import * as mini from './rewards/mini.js';
+import * as codumo from './rewards/codumo.js';
+import * as bitu from './rewards/bitu.js';
+import * as ben32 from './rewards/ben32.js';
 
 const canvas = document.getElementById('tiles');
 const fieldsEl = document.getElementById('fields');
@@ -29,7 +33,7 @@ const STEP_MS = 1000 / 60;
 const stepper = createStepper(STEP_MS, 6);
 let paused = false;
 const rewardGate = createRewardGate();
-const REWARDS = { BENNI: hello, NINJA: ninja, KONAMI: cake, 'BENJAMIN BAUM': approved };
+const REWARDS = { BENNI: hello, NINJA: ninja, KONAMI: cake, 'BENJAMIN BAUM': approved, MINI: mini, CODUMO: codumo, BITU84: bitu, BEN32: ben32 };
 const NAME = 'BENJAMIN BAUM';
 const REV_APPROVED = 'REV: 1.0 · FREIGEGEBEN';
 let unlocked = false;
@@ -47,7 +51,7 @@ function drawFields() {
     return el;
   });
   floorEl.style.top = `${layout.floorY}px`;
-  fxEl.style.setProperty('--comic-size', `${Math.round(layout.tileSize * 0.8)}px`);
+  for (const el of [fxEl, rewardEl]) el.style.setProperty('--comic-size', `${Math.round(layout.tileSize * 0.8)}px`);
 }
 
 function currentLetters() {
@@ -68,7 +72,9 @@ async function playReward(name, match) {
       setPaused: (value) => {
         paused = value;
       },
-      comic: (text, x, y) => showComicWord(fxEl, text, x, y, { reducedMotion }),
+      layout,
+      // Reward comics sit in the reward layer so overlays do not hide them.
+      comic: (text, x, y) => showComicWord(rewardEl, text, x, y, { reducedMotion }),
     });
     if (name === NAME) approveDrawing();
   } finally {
