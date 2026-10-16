@@ -717,6 +717,7 @@ body.nightvision #scene > :not(#reward) {
 }
 
 .achievement.calm { animation: fade-in 400ms ease-out backwards; }
+.achievement.calm.out { transform: translateX(-50%); }
 
 /* BEN32 */
 .ben32-panel {
@@ -783,3 +784,4 @@ body.nightvision #scene > :not(#reward) {
 }
 
 .ben32-panel.calm { animation: fade-in 400ms ease-out backwards; }
+.ben32-panel.calm.out { transform: translate(-50%, -50%) rotate(-5deg); }

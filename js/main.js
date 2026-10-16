@@ -106,6 +106,7 @@ function approveDrawing() {
 function restart() {
   if (!physics || rewardGate.active) return;
   physics.reset(TILES);
+  if (reducedMotion) physics.settle();
   unlocked = false;
   wordWatcher = createWordWatcher(SECRET_WORDS);
   konami.reset();
