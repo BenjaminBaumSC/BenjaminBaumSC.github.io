@@ -332,3 +332,102 @@ body.nightvision {
 body.nightvision #scene > :not(#reward) {
   filter: grayscale(1) sepia(1) hue-rotate(60deg) saturate(4) brightness(1.1);
 }
+
+.cake-stage {
+  position: absolute;
+  inset: 0;
+  transition: opacity 500ms ease-in;
+}
+
+.cake-stage.out {
+  opacity: 0;
+}
+
+.cake {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  width: min(240px, 34vh);
+  transform: translateX(-50%);
+  animation: cake-float 1400ms cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.35));
+}
+
+.cake svg {
+  display: block;
+  width: 100%;
+}
+
+.cake .flame {
+  transform-origin: 100px 36px;
+  animation: flicker 180ms ease-in-out infinite alternate;
+}
+
+@keyframes cake-float {
+  from { transform: translate(-50%, -120vh) rotate(-6deg); }
+  80% { transform: translate(-50%, 8px) rotate(1deg); }
+}
+
+@keyframes flicker {
+  from { transform: scale(1, 1); }
+  to { transform: scale(0.85, 1.12); }
+}
+
+.cake.glitch {
+  animation: glitch 600ms steps(2) forwards;
+}
+
+@keyframes glitch {
+  0% { clip-path: inset(0 0 60% 0); transform: translate(-46%, 0); filter: hue-rotate(90deg); }
+  20% { clip-path: inset(30% 0 20% 0); transform: translate(-54%, 0); filter: hue-rotate(200deg) saturate(3); }
+  40% { clip-path: inset(60% 0 0 0); transform: translate(-48%, 0); filter: invert(1); }
+  60% { clip-path: inset(10% 0 50% 0); transform: translate(-52%, 0); filter: none; }
+  80% { clip-path: inset(40% 0 10% 0); transform: translate(-50%, 0); filter: hue-rotate(300deg); }
+  100% { clip-path: inset(0); transform: translate(-50%, 0); }
+}
+
+.cake.gone {
+  visibility: hidden;
+}
+
+.cake.fade {
+  opacity: 0;
+  transition: opacity 600ms ease-in;
+}
+
+.cake-stage.calm .cake {
+  animation: fade-in 600ms ease-out backwards;
+}
+
+.confetti {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  border-radius: 1px;
+  animation: confetti 1600ms cubic-bezier(0.15, 0.6, 0.4, 1) forwards;
+}
+
+@keyframes confetti {
+  from { transform: translate(0, 0) rotate(0); opacity: 1; }
+  to { transform: translate(var(--dx), var(--dy)) rotate(var(--spin)); opacity: 0; }
+}
+
+.cake-pixel {
+  position: absolute;
+  animation: pixel-out 900ms ease-in forwards;
+}
+
+@keyframes pixel-out {
+  to { transform: translate(var(--dx), var(--dy)) scale(0.4); opacity: 0; }
+}
+
+.lie {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--ink-strong);
+  animation: fade-in 800ms ease-out;
+}

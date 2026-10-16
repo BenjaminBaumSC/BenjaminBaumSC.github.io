@@ -1,11 +1,12 @@
 import { FIELD_COUNT, FIELD_PREMIUMS, SECRET_WORDS } from './config.js';
 import { computeLayout, clampDelta } from './layout.js';
-import { createWordWatcher, fieldLetters, findWord, pickSnapField } from './rules.js';
+import { createKonamiDetector, createWordWatcher, fieldLetters, findWord, pickSnapField, swipeDirection } from './rules.js';
 import { createPhysics } from './physics.js';
 import { createRenderer } from './render.js';
 import { glowFields, showComicWord, showImpact } from './fx.js';
 import * as hello from './rewards/hello.js';
 import * as ninja from './rewards/ninja.js';
+import * as cake from './rewards/cake.js';
 
 const canvas = document.getElementById('tiles');
 const fieldsEl = document.getElementById('fields');
@@ -20,8 +21,11 @@ let renderer = null;
 let fieldEls = [];
 let lastFrame = performance.now();
 let paused = false;
-const REWARDS = { BENNI: hello, NINJA: ninja };
+let rewardPlaying = false;
+const REWARDS = { BENNI: hello, NINJA: ninja, KONAMI: cake };
+const ARROWS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
 const wordWatcher = createWordWatcher(SECRET_WORDS);
+const konami = createKonamiDetector();
 
 function drawFields() {
   fieldsEl.replaceChildren();
@@ -41,6 +45,7 @@ function currentLetters() {
 }
 
 async function playReward(name, match) {
+  rewardPlaying = true;
   physics.setInputEnabled(false);
   try {
     await REWARDS[name].play({
@@ -54,6 +59,8 @@ async function playReward(name, match) {
     });
   } finally {
     paused = false;
+    rewardPlaying = false;
+    konami.reset();
     physics.setInputEnabled(true);
     checkWords();
   }
@@ -89,10 +96,27 @@ function onRelease(tileId, release) {
   checkWords();
 }
 
+function onTap(tileId) {
+  const { letter } = physics.tileStates()[tileId];
+  if (konami.pushTap(letter, performance.now())) playReward('KONAMI');
+}
+
+function onBackgroundGesture(dx, dy) {
+  const direction = swipeDirection(dx, dy);
+  if (direction) konami.pushDirection(direction, performance.now());
+}
+
+window.addEventListener('keydown', (event) => {
+  const direction = ARROWS[event.key];
+  if (!direction) return;
+  event.preventDefault();
+  if (!rewardPlaying) konami.pushDirection(direction, performance.now());
+});
+
 function start() {
   drawFields();
   renderer = createRenderer(canvas, layout);
-  physics = createPhysics(layout, { onGrab, onRelease }, canvas);
+  physics = createPhysics(layout, { onGrab, onRelease, onTap, onBackgroundGesture }, canvas);
   requestAnimationFrame(frame);
 }
 
