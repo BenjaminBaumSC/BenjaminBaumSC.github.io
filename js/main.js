@@ -1,4 +1,4 @@
-import { FIELD_COUNT, FIELD_PREMIUMS, POINTS, SECRET_WORDS, TILES } from './config.js';
+import { EXTRA_TILES, FIELD_COUNT, FIELD_PREMIUMS, POINTS, SECRET_WORDS, TILES } from './config.js';
 import { computeLayout, createStepper } from './layout.js';
 import { createKonamiDetector, createRewardGate, createWordWatcher, fieldLetters, pickSnapField, scoreRow, swipeDirection } from './rules.js';
 import { createPhysics } from './physics.js';
@@ -7,6 +7,7 @@ import { glowFields, showComicWord, showImpact } from './fx.js';
 import * as hello from './rewards/hello.js';
 import * as ninja from './rewards/ninja.js';
 import * as cake from './rewards/cake.js';
+import * as approved from './rewards/approved.js';
 
 const canvas = document.getElementById('tiles');
 const fieldsEl = document.getElementById('fields');
@@ -28,7 +29,10 @@ const STEP_MS = 1000 / 60;
 const stepper = createStepper(STEP_MS, 6);
 let paused = false;
 const rewardGate = createRewardGate();
-const REWARDS = { BENNI: hello, NINJA: ninja, KONAMI: cake };
+const REWARDS = { BENNI: hello, NINJA: ninja, KONAMI: cake, 'BENJAMIN BAUM': approved };
+const NAME = 'BENJAMIN BAUM';
+const REV_APPROVED = 'REV: 1.0 · FREIGEGEBEN';
+let unlocked = false;
 const ARROWS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
 let wordWatcher = createWordWatcher(SECRET_WORDS);
 const konami = createKonamiDetector();
@@ -64,7 +68,9 @@ async function playReward(name, match) {
       setPaused: (value) => {
         paused = value;
       },
+      comic: (text, x, y) => showComicWord(fxEl, text, x, y, { reducedMotion }),
     });
+    if (name === NAME) approveDrawing();
   } finally {
     paused = false;
     rewardGate.finish();
@@ -84,9 +90,17 @@ function updateScore() {
   scoreEl.classList.add('bump');
 }
 
+function approveDrawing() {
+  revEl.textContent = REV_APPROVED;
+  if (unlocked) return;
+  unlocked = true;
+  physics.addTiles(EXTRA_TILES);
+}
+
 function restart() {
   if (!physics || rewardGate.active) return;
   physics.reset(TILES);
+  unlocked = false;
   wordWatcher = createWordWatcher(SECRET_WORDS);
   konami.reset();
   revEl.textContent = REV_DRAFT;
