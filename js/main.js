@@ -22,6 +22,9 @@ const scoreEl = document.getElementById('score');
 const revEl = document.getElementById('rev');
 const restartEl = document.getElementById('restart');
 const clearRowEl = document.getElementById('clear-row');
+const bagEl = document.getElementById('bag');
+const BAG_IN_MS = 700;
+let bagTimer = null;
 const REV_DRAFT = 'REV: 0.1 · BL. 1/1';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -102,6 +105,7 @@ function approveDrawing() {
   if (unlocked) return;
   unlocked = true;
   physics.addTiles(EXTRA_TILES);
+  if (reducedMotion) physics.settle();
 }
 
 function restart() {
@@ -185,10 +189,39 @@ window.addEventListener('keydown', (event) => {
   if (!rewardGate.active) konami.pushDirection(direction, performance.now());
 });
 
+function positionBag() {
+  const { bagX, bagY, bagSize } = layout;
+  Object.assign(bagEl.style, { left: `${bagX - bagSize / 2}px`, top: `${bagY - bagSize * 0.85}px`, width: `${bagSize}px` });
+}
+
+function showBag() {
+  if (reducedMotion) return;
+  clearTimeout(bagTimer);
+  positionBag();
+  bagEl.hidden = false;
+  bagEl.className = '';
+  void bagEl.offsetWidth;
+  bagEl.className = 'in';
+  bagTimer = setTimeout(() => {
+    bagEl.className = 'pouring';
+  }, BAG_IN_MS);
+}
+
+function hideBag() {
+  if (reducedMotion) return;
+  clearTimeout(bagTimer);
+  bagTimer = setTimeout(() => {
+    bagEl.className = 'out';
+    bagTimer = setTimeout(() => {
+      bagEl.hidden = true;
+    }, 600);
+  }, 250);
+}
+
 function start() {
   drawFields();
   renderer = createRenderer(canvas, layout);
-  physics = createPhysics(layout, { onGrab, onRelease, onTap, onBackgroundGesture }, canvas);
+  physics = createPhysics(layout, { onGrab, onRelease, onTap, onBackgroundGesture, onPourStart: showBag, onPourEnd: hideBag }, canvas);
   if (reducedMotion) physics.settle();
   requestAnimationFrame(frame);
 }
@@ -211,6 +244,7 @@ function onResize() {
     return;
   }
   drawFields();
+  positionBag();
   physics.relayout(layout);
   renderer.resize(layout);
 }

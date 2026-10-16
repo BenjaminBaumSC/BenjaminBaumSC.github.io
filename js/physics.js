@@ -1,5 +1,6 @@
 import { TILES } from './config.js';
 import { isOutside, shiftForResize } from './layout.js';
+import { shuffle } from './rules.js';
 
 const { Engine, Bodies, Body, Composite, Constraint, Vector } = Matter;
 
@@ -10,10 +11,11 @@ const WALL = 200;
 const STEP_MS = 1000 / 60;
 const SPEED_WINDOW_MS = 80;
 const COLLIDE_ALL = 0xffffffff;
-// A narrow drop zone makes some tiles land on top of each other.
+// Respawned tiles fall back into a narrow zone in the middle.
 const NAME_DROP = 0.45;
-// Delivered tiles spread over the whole width so they fit below the rack.
-const DELIVERY_DROP = 0.9;
+// Time for the bag to swing in before the first tile drops, then one tile per interval.
+const POUR_LEAD_MS = 700;
+const POUR_INTERVAL_MS = 160;
 
 export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILES) {
   const engine = Engine.create();
@@ -28,14 +30,46 @@ export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILE
 
   // Indexed by tile id; extra tiles are appended in id order.
   let tiles = [];
+  // Tiles still inside the bag, in the random order they will drop out.
+  let bagQueue = [];
+  let pourWait = 0;
   buildBounds();
-  addTiles(tileDefs, NAME_DROP);
+  addTiles(tileDefs);
 
-  function addTiles(defs, spanFraction) {
-    const added = defs.map((def) => ({ ...def, body: createTileBody(layout.tileSize), snappedField: null, visible: true }));
+  function addTiles(defs) {
+    const added = defs.map((def) => ({ ...def, body: createTileBody(layout.tileSize), snappedField: null, visible: false }));
     tiles = [...tiles, ...added];
+    for (const tile of added) {
+      Body.setStatic(tile.body, true);
+      tile.body.collisionFilter.mask = 0;
+    }
     Composite.add(engine.world, added.map((t) => t.body));
-    added.forEach((tile, i) => placeAbove(tile, i, i, added.length, spanFraction));
+    if (bagQueue.length === 0) {
+      pourWait = POUR_LEAD_MS;
+      callbacks.onPourStart?.();
+    }
+    bagQueue = [...bagQueue, ...shuffle(added)];
+  }
+
+  function dropFromBag(tile) {
+    const { bagX, bagY, tileSize } = layout;
+    tile.visible = true;
+    Body.setStatic(tile.body, false);
+    tile.body.collisionFilter.mask = COLLIDE_ALL;
+    Body.setPosition(tile.body, { x: bagX + (Math.random() - 0.5) * tileSize * 0.4, y: bagY + tileSize * 0.6 });
+    Body.setAngle(tile.body, Math.random() * Math.PI * 2);
+    Body.setVelocity(tile.body, { x: (Math.random() - 0.5) * 8, y: 5 + Math.random() * 3 });
+    Body.setAngularVelocity(tile.body, (Math.random() - 0.5) * 0.6);
+  }
+
+  function pour(deltaMs) {
+    if (bagQueue.length === 0) return;
+    pourWait -= deltaMs;
+    while (pourWait <= 0 && bagQueue.length > 0) {
+      dropFromBag(bagQueue.shift());
+      pourWait += POUR_INTERVAL_MS;
+    }
+    if (bagQueue.length === 0) callbacks.onPourEnd?.();
   }
 
   function createTileBody(size) {
@@ -210,6 +244,7 @@ export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILE
   });
 
   function step(deltaMs) {
+    pour(deltaMs);
     Engine.update(engine, deltaMs);
     tiles.forEach((tile, i) => {
       const { body } = tile;
@@ -280,14 +315,15 @@ export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILE
       }
     },
     addTiles(defs) {
-      addTiles(defs, DELIVERY_DROP);
+      addTiles(defs);
     },
     reset(defs) {
       endDrag(false);
       pointer = null;
       Composite.remove(engine.world, tiles.map((t) => t.body));
       tiles = [];
-      addTiles(defs, NAME_DROP);
+      bagQueue = [];
+      addTiles(defs);
     },
     settle() {
       for (let i = 0; i < 600; i++) step(STEP_MS);

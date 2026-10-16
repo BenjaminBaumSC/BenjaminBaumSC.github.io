@@ -19,9 +19,14 @@ export function computeLayout(width, height) {
     w: fieldSize,
     h: fieldSize,
   }));
+  const bagSize = fieldSize * 2.4;
   return {
     width,
     height,
+    // The bag hangs upside down; bagY is its mouth, the body sits above it.
+    bagX: width / 2,
+    bagY: Math.max(bagSize * 0.8, rowY - fieldSize * 2.5),
+    bagSize,
     portrait: height >= width,
     fieldSize,
     tileSize,

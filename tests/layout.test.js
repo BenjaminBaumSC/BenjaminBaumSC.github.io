@@ -95,3 +95,12 @@ test('shiftForResize pulls a tile back inside a narrower viewport', () => {
   const shifted = shiftForResize({ x: 1250, y: 300 }, before, after);
   assert.ok(shifted.x <= 900 - after.tileSize / 2);
 });
+
+test('computeLayout hangs the bag mouth centered above the rack and inside the view', () => {
+  for (const [w, h] of [[1920, 1080], [1200, 763], [812, 375], [572, 343]]) {
+    const layout = computeLayout(w, h);
+    assert.equal(layout.bagX, w / 2);
+    assert.ok(layout.bagY < layout.rowY, `${w}x${h} mouth above rack`);
+    assert.ok(layout.bagY - layout.bagSize * 0.8 >= 0, `${w}x${h} bag fully visible`);
+  }
+});

@@ -19,6 +19,7 @@ import {
   swipeDirection,
   fieldLetters,
   createRewardGate,
+  shuffle,
 } from '../js/rules.js';
 
 function row(letters, start = 0) {
@@ -198,4 +199,18 @@ test('createRewardGate lets only one reward run at a time', () => {
   gate.finish();
   assert.equal(gate.active, false);
   assert.equal(gate.tryStart(), true);
+});
+
+test('shuffle returns every item once in a new order', () => {
+  const values = [0.9, 0.1, 0.5, 0.3, 0.7];
+  let i = 0;
+  const shuffled = shuffle([1, 2, 3, 4, 5], () => values[i++ % values.length]);
+  assert.deepEqual([...shuffled].sort(), [1, 2, 3, 4, 5]);
+  assert.notDeepEqual(shuffled, [1, 2, 3, 4, 5]);
+});
+
+test('shuffle leaves the input untouched', () => {
+  const input = [1, 2, 3];
+  shuffle(input, () => 0);
+  assert.deepEqual(input, [1, 2, 3]);
 });
