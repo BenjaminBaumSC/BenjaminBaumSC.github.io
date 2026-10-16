@@ -77,6 +77,7 @@ async function playReward(name, match) {
         paused = value;
       },
       layout,
+      renderer,
       // Reward comics sit in the reward layer so overlays do not hide them.
       comic: (text, x, y) => showComicWord(rewardEl, text, x, y, { reducedMotion }),
     });
@@ -152,7 +153,7 @@ function checkWords() {
 }
 
 function onGrab(tileId) {
-  const tile = physics.tileStates()[tileId];
+  const tile = physics.tileStates().find((t) => t.id === tileId);
   if (tile.snappedField === null) return;
   physics.unsnap(tileId);
   showComicWord(fxEl, 'PLOPP!', tile.x, tile.y - layout.tileSize * 0.6, { reducedMotion });
@@ -173,7 +174,7 @@ function onRelease(tileId, release) {
 }
 
 function onTap(tileId) {
-  const { letter } = physics.tileStates()[tileId];
+  const { letter } = physics.tileStates().find((t) => t.id === tileId);
   if (konami.pushTap(letter, performance.now())) playReward('KONAMI');
 }
 

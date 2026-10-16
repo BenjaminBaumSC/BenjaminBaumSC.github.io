@@ -851,3 +851,68 @@ body.nightvision #scene > :not(#reward) {
   from { transform: rotate(173deg); }
   to { transform: rotate(187deg); }
 }
+
+/* BENNI party */
+.greeting {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+  font: 900 clamp(28px, 6vw, 72px) / 1 "Arial Black", Impact, sans-serif;
+  color: #fff;
+  -webkit-text-stroke: 3px #0d2a52;
+  paint-order: stroke fill;
+  text-shadow: 5px 5px 0 #0d2a52;
+  transition: opacity 500ms ease-in;
+}
+
+.greeting span {
+  display: inline-block;
+  white-space: pre;
+  animation: letter-pop 420ms cubic-bezier(0.3, 1.6, 0.5, 1) backwards;
+}
+
+.greeting.calm span {
+  animation: fade-in 500ms ease-out backwards;
+}
+
+.greeting.out {
+  opacity: 0;
+}
+
+@keyframes letter-pop {
+  from { opacity: 0; transform: translateY(40%) scale(0.2) rotate(-20deg); }
+}
+
+.confetti-rain {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.flake {
+  position: absolute;
+  top: -20px;
+  width: 9px;
+  height: 14px;
+  border-radius: 1px;
+  animation-name: flake-fall, flake-flutter;
+  animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: 1, infinite;
+  animation-direction: normal, alternate;
+  animation-fill-mode: forwards, none;
+}
+
+@keyframes flake-fall {
+  from { translate: 0 0; }
+  to { translate: 0 110vh; }
+}
+
+@keyframes flake-flutter {
+  from { transform: translateX(-14px) rotate(-35deg) rotateY(0deg); }
+  to { transform: translateX(14px) rotate(35deg) rotateY(180deg); }
+}
+
+.confetti-rain.calm .flake {
+  animation: fade-in-out 3000ms ease forwards;
+}

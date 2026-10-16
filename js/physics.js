@@ -28,8 +28,10 @@ export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILE
   let pointer = null;
   let drag = null;
 
-  // Indexed by tile id; extra tiles are appended in id order.
   let tiles = [];
+  const byId = (id) => tiles.find((tile) => tile.id === id);
+  // Tiles flying into a shape: each eases from its position to a target.
+  let shape = null;
   // Tiles still inside the bag, in the random order they will drop out.
   let bagQueue = [];
   let pourWait = 0;
@@ -118,7 +120,7 @@ export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILE
   }
 
   function snap(tileId, fieldIndex) {
-    const tile = tiles[tileId];
+    const tile = byId(tileId);
     tile.snappedField = fieldIndex;
     Body.setStatic(tile.body, true);
     // Snapped tiles sit in the rack behind the scene; loose tiles pass in front.
@@ -128,7 +130,7 @@ export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILE
   }
 
   function unsnap(tileId) {
-    const tile = tiles[tileId];
+    const tile = byId(tileId);
     if (tile.snappedField === null) return;
     tile.snappedField = null;
     Body.setStatic(tile.body, false);
@@ -243,8 +245,20 @@ export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILE
     pointer = null;
   });
 
+  function moveIntoShape(deltaMs) {
+    if (!shape) return;
+    shape.elapsed = Math.min(shape.elapsed + deltaMs, shape.duration);
+    const t = shape.elapsed / shape.duration;
+    const eased = 1 - (1 - t) ** 3;
+    for (const { tile, from, to, angle } of shape.items) {
+      Body.setPosition(tile.body, { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased });
+      Body.setAngle(tile.body, angle * (1 - eased));
+    }
+  }
+
   function step(deltaMs) {
     pour(deltaMs);
+    moveIntoShape(deltaMs);
     Engine.update(engine, deltaMs);
     tiles.forEach((tile, i) => {
       const { body } = tile;
@@ -270,6 +284,7 @@ export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILE
         angle: tile.body.angle,
         snappedField: tile.snappedField,
         visible: tile.visible,
+        color: tile.color ?? null,
       }));
     },
     relayout(next) {
@@ -294,7 +309,7 @@ export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILE
     },
     setTilesVisible(ids, visible) {
       for (const id of ids) {
-        const tile = tiles[id];
+        const tile = byId(id);
         tile.visible = visible;
         // Hidden tiles must not collide with the visible ones.
         tile.body.collisionFilter.mask = visible && tile.snappedField === null ? COLLIDE_ALL : 0;
@@ -302,7 +317,7 @@ export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILE
       }
     },
     dropTiles(ids) {
-      ids.forEach((id, order) => placeAbove(tiles[id], order));
+      ids.forEach((id, order) => placeAbove(byId(id), order));
     },
     // Launches every snapped tile out of the rack; calm keeps them from flying.
     blast(calm) {
@@ -317,12 +332,47 @@ export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILE
     addTiles(defs) {
       addTiles(defs);
     },
+    removeTiles(ids) {
+      const removed = tiles.filter((tile) => ids.includes(tile.id));
+      Composite.remove(engine.world, removed.map((tile) => tile.body));
+      tiles = tiles.filter((tile) => !ids.includes(tile.id));
+      bagQueue = bagQueue.filter((tile) => !ids.includes(tile.id));
+    },
+    // Kicks loose tiles upwards like a cheering crowd.
+    hop() {
+      for (const tile of tiles) {
+        if (!tile.visible || tile.snappedField !== null || tile.body.isStatic) continue;
+        Body.setVelocity(tile.body, { x: (Math.random() - 0.5) * 4, y: -5 - Math.random() * 7 });
+        Body.setAngularVelocity(tile.body, (Math.random() - 0.5) * 0.4);
+      }
+    },
+    // targets: {id, x, y}[]; tiles stop colliding and ease into place.
+    formShape(targets, durationMs) {
+      const items = targets.map(({ id, x, y }) => {
+        const tile = byId(id);
+        Body.setStatic(tile.body, true);
+        tile.body.collisionFilter.mask = 0;
+        return { tile, from: { ...tile.body.position }, to: { x, y }, angle: tile.body.angle };
+      });
+      shape = { items, elapsed: 0, duration: durationMs };
+    },
+    releaseShape() {
+      if (!shape) return;
+      for (const { tile } of shape.items) {
+        Body.setStatic(tile.body, false);
+        tile.body.collisionFilter.mask = COLLIDE_ALL;
+        Body.setVelocity(tile.body, { x: (Math.random() - 0.5) * 3, y: Math.random() * 2 });
+        Body.setAngularVelocity(tile.body, (Math.random() - 0.5) * 0.3);
+      }
+      shape = null;
+    },
     reset(defs) {
       endDrag(false);
       pointer = null;
       Composite.remove(engine.world, tiles.map((t) => t.body));
       tiles = [];
       bagQueue = [];
+      shape = null;
       addTiles(defs);
     },
     settle() {

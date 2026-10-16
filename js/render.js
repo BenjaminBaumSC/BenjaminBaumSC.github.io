@@ -6,19 +6,28 @@ const TILE_DEPTH = 0.32;
 const FOV = 30;
 const WOOD_SIDE = 0xdcbc80;
 const SQUASH_MS = 180;
+const WAVE_MS = 520;
 
-function letterTexture(letter, points) {
+function letterTexture(letter, points, color) {
   const size = 256;
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext('2d');
-  const wood = ctx.createLinearGradient(0, 0, size, size);
-  wood.addColorStop(0, '#f6e4bd');
-  wood.addColorStop(0.6, '#ecd29c');
-  wood.addColorStop(1, '#dcbc80');
-  ctx.fillStyle = wood;
+  const face = ctx.createLinearGradient(0, 0, size, size);
+  if (color) {
+    face.addColorStop(0, '#ffffff55');
+    face.addColorStop(0.35, color);
+    face.addColorStop(1, color);
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, size, size);
+  } else {
+    face.addColorStop(0, '#f6e4bd');
+    face.addColorStop(0.6, '#ecd29c');
+    face.addColorStop(1, '#dcbc80');
+  }
+  ctx.fillStyle = face;
   ctx.fillRect(0, 0, size, size);
-  ctx.fillStyle = '#2a2118';
+  ctx.fillStyle = color ? '#ffffff' : '#2a2118';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = `bold ${size * 0.62}px Georgia, "Times New Roman", serif`;
@@ -61,9 +70,10 @@ export function createRenderer(canvas, layout) {
 
   function meshFor(state) {
     if (!meshes.has(state.id)) {
-      const front = new THREE.MeshStandardMaterial({ map: letterTexture(state.letter, POINTS[state.letter]), roughness: 0.6 });
+      const front = new THREE.MeshStandardMaterial({ map: letterTexture(state.letter, POINTS[state.letter], state.color), roughness: 0.6 });
+      const side = state.color ? new THREE.MeshStandardMaterial({ color: state.color, roughness: 0.5 }) : sideMaterial;
       // BoxGeometry material order: +x, -x, +y, -y, +z (front), -z.
-      const mesh = new THREE.Mesh(geometry, [sideMaterial, sideMaterial, sideMaterial, sideMaterial, front, sideMaterial]);
+      const mesh = new THREE.Mesh(geometry, [side, side, side, side, front, side]);
       mesh.castShadow = true;
       scene.add(mesh);
       meshes.set(state.id, mesh);
@@ -73,6 +83,8 @@ export function createRenderer(canvas, layout) {
 
   let tileSize = layout.tileSize;
   const squashes = new Map();
+  // tile id -> { start, cycles } for the La-Ola lift.
+  const waves = new Map();
 
   function resize(next) {
     const { width, height } = next;
@@ -122,6 +134,18 @@ export function createRenderer(canvas, layout) {
           mesh.scale.y *= 1 - 0.12 * amount;
         }
       }
+      const wave = waves.get(state.id);
+      if (wave) {
+        const t = (performance.now() - wave.start) / WAVE_MS;
+        if (t >= wave.cycles) {
+          waves.delete(state.id);
+        } else if (t > 0) {
+          const phase = t % 1;
+          mesh.position.y += Math.sin(phase * Math.PI) * tileSize * 0.7;
+          mesh.position.z += tileSize;
+          mesh.rotation.z += Math.sin(phase * Math.PI * 2) * 0.35;
+        }
+      }
     }
     renderer.render(scene, camera);
   }
@@ -131,5 +155,11 @@ export function createRenderer(canvas, layout) {
     squashes.set(tileId, performance.now());
   }
 
-  return { resize, sync, squash };
+  // Lifts the tiles one after another, `cycles` times, like a stadium wave.
+  function wave(tileIds, cycles = 2, staggerMs = 110) {
+    const now = performance.now();
+    tileIds.forEach((id, i) => waves.set(id, { start: now + i * staggerMs, cycles }));
+  }
+
+  return { resize, sync, squash, wave };
 }

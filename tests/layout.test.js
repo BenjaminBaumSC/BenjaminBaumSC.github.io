@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeLayout, isOutside, createStepper, shiftForResize } from '../js/layout.js';
+import { computeLayout, isOutside, createStepper, shiftForResize, heartPoints } from '../js/layout.js';
 
 test('computeLayout caps fields at 64 px on a large desktop', () => {
   const layout = computeLayout(1920, 1080);
@@ -103,4 +103,35 @@ test('computeLayout hangs the bag mouth centered above the rack and inside the v
     assert.ok(layout.bagY < layout.rowY, `${w}x${h} mouth above rack`);
     assert.ok(layout.bagY - layout.bagSize * 0.8 >= 0, `${w}x${h} bag fully visible`);
   }
+});
+
+test('heartPoints returns the requested number of points', () => {
+  assert.equal(heartPoints(12, 60).length, 12);
+  assert.equal(heartPoints(22, 60).length, 22);
+});
+
+test('heartPoints spaces neighbours evenly along the outline', () => {
+  const points = heartPoints(17, 60);
+  const gaps = points.map((p, i) => {
+    const q = points[(i + 1) % points.length];
+    return Math.hypot(q.x - p.x, q.y - p.y);
+  });
+  for (const gap of gaps) assert.ok(gap > 60 * 0.75 && gap < 60 * 1.25, `gap ${gap}`);
+});
+
+test('heartPoints is centered and mirror symmetric', () => {
+  const points = heartPoints(16, 50);
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  assert.ok(Math.abs(Math.max(...xs) + Math.min(...xs)) < 1);
+  assert.ok(Math.abs(Math.max(...ys) + Math.min(...ys)) < 1);
+  for (const p of points) {
+    assert.ok(points.some((q) => Math.hypot(q.x + p.x, q.y - p.y) < 50 * 0.6), 'mirror point exists');
+  }
+});
+
+test('heartPoints puts the tip at the bottom', () => {
+  const points = heartPoints(12, 50);
+  const lowest = points.reduce((a, b) => (b.y > a.y ? b : a));
+  assert.ok(Math.abs(lowest.x) < 50 * 0.6);
 });

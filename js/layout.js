@@ -62,3 +62,36 @@ export function shiftForResize({ x, y }, before, after) {
     y: y + (after.floorY - before.floorY),
   };
 }
+
+// Points spread evenly along a heart outline, about `spacing` apart and centred on 0,0.
+export function heartPoints(count, spacing) {
+  const samples = 2000;
+  const curve = Array.from({ length: samples + 1 }, (_, i) => {
+    const t = (i / samples) * Math.PI * 2;
+    return {
+      x: 16 * Math.sin(t) ** 3,
+      y: -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)),
+    };
+  });
+  const lengths = [0];
+  for (let i = 1; i < curve.length; i++) {
+    lengths.push(lengths[i - 1] + Math.hypot(curve[i].x - curve[i - 1].x, curve[i].y - curve[i - 1].y));
+  }
+  const total = lengths.at(-1);
+  // An even count puts points on both cusps (top notch and tip), where chords would
+  // shrink. For an odd count the notch point is left out, leaving a wider gap there.
+  const slots = count % 2 === 0 ? count : count + 1;
+  const scale = (slots * spacing) / total;
+  const points = [];
+  let j = 0;
+  for (let k = count % 2 === 0 ? 0 : 1; k < slots; k++) {
+    const target = (k / slots) * total;
+    while (lengths[j + 1] < target) j++;
+    points.push({ x: curve[j].x * scale, y: curve[j].y * scale });
+  }
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  const cx = (Math.max(...xs) + Math.min(...xs)) / 2;
+  const cy = (Math.max(...ys) + Math.min(...ys)) / 2;
+  return points.map((p) => ({ x: p.x - cx, y: p.y - cy }));
+}
