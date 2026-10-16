@@ -84,6 +84,19 @@ Die BENNI-Belohnung wird zur Party (Benjamin, 16.10.2026). Sie dauert etwa acht 
 
 Bei Reduced Motion erscheinen nur der Text und ruhig eingeblendetes Konfetti, ohne Party-Steine, Welle, Applaus und Herz.
 
+## 6. Leerlauf-Eskalation (16.10.2026)
+
+Wenn niemand spielt, wird die Seite nach und nach ungeduldig (Benjamin, 16.10.2026; Stufe 4 „MGS-Alarm“ bewusst weggelassen):
+
+1. **Nach 10 s – Fußtippen (Sonic):** Ein zufälliger freier Stein wippt rhythmisch, dazu ploppt einmal ein Comic-„…?“ auf.
+2. **Nach 25 s – Einschlafen (Super Mario 64):** Alle freien Steine „atmen“ langsam (leichtes Stauchen), über dem Haufen steigen Comic-„Z“ auf.
+3. **Nach 45 s – Attract-Modus (Spielhalle):** Über der Leiste blinkt `PRESS START` in Arcade-Optik. Ein Pac-Man und ein Geist laufen in Schleife über die Bodenlinie, und Steine in Pac-Mans Nähe hüpfen erschrocken hoch.
+
+- Jede Stufe hält an, bis der Spieler etwas tut. Dann endet alles sofort, und der Zähler beginnt von vorn.
+- Als „Spielen“ zählen Klick, Touch und Tastendruck, **nicht** reine Mausbewegung. Sonst sähe jemand, der nur mit der Maus über die Seite fährt, die Animationen nie. *(Claudes Entscheidung)*
+- Während einer Belohnung, während der Beutel schüttet und im Hochformat läuft der Zähler nicht.
+- Bei Reduced Motion gibt es kein Wippen, kein Atmen und keinen Pac-Man. Es bleiben nur das „…?“, still eingeblendete „Z“ und ein stehendes `PRESS START`.
+
 ## Technik
 
 - Weiterhin keine neuen Dependencies, kein Build und keine Web-Fonts.
