@@ -22,7 +22,7 @@ export function computeLayout(width, height) {
   return {
     width,
     height,
-    portrait: height > width,
+    portrait: height >= width,
     fieldSize,
     tileSize,
     hitSize: Math.max(tileSize, MIN_HIT_SIZE),
@@ -36,6 +36,24 @@ export function isOutside(x, y, layout) {
   return x < 0 || x > layout.width || y > layout.height || y < -layout.height;
 }
 
-export function clampDelta(ms) {
-  return Math.min(Math.max(ms, 0), 1000 / 60);
+// Fixed-size physics steps keep real-time speed at any frame rate without
+// large steps that would let tiles tunnel through the floor.
+export function createStepper(stepMs, maxSteps) {
+  let pending = 0;
+  return {
+    advance(deltaMs) {
+      pending = Math.min(pending + Math.max(deltaMs, 0), stepMs * maxSteps);
+      const steps = Math.floor(pending / stepMs + 1e-9);
+      pending = Math.max(pending - steps * stepMs, 0);
+      return steps;
+    },
+  };
+}
+
+export function shiftForResize({ x, y }, before, after) {
+  const half = after.tileSize / 2;
+  return {
+    x: Math.min(Math.max(x, half), after.width - half),
+    y: y + (after.floorY - before.floorY),
+  };
 }

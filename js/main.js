@@ -1,5 +1,5 @@
 import { FIELD_COUNT, FIELD_PREMIUMS, SECRET_WORDS } from './config.js';
-import { computeLayout, clampDelta } from './layout.js';
+import { computeLayout, createStepper } from './layout.js';
 import { createKonamiDetector, createRewardGate, createWordWatcher, fieldLetters, findWord, pickSnapField, swipeDirection } from './rules.js';
 import { createPhysics } from './physics.js';
 import { createRenderer } from './render.js';
@@ -20,6 +20,8 @@ let physics = null;
 let renderer = null;
 let fieldEls = [];
 let lastFrame = performance.now();
+const STEP_MS = 1000 / 60;
+const stepper = createStepper(STEP_MS, 6);
 let paused = false;
 const rewardGate = createRewardGate();
 const REWARDS = { BENNI: hello, NINJA: ninja, KONAMI: cake };
@@ -122,10 +124,10 @@ function start() {
 }
 
 function frame(now) {
-  const delta = clampDelta(now - lastFrame);
+  const steps = stepper.advance(now - lastFrame);
   lastFrame = now;
   if (!layout.portrait) {
-    if (!paused) physics.step(delta);
+    if (!paused) for (let i = 0; i < steps; i++) physics.step(STEP_MS);
     renderer.sync(physics.tileStates());
   }
   requestAnimationFrame(frame);

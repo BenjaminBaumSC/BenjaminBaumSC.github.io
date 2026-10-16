@@ -1,5 +1,5 @@
 import { TILES } from './config.js';
-import { isOutside } from './layout.js';
+import { isOutside, shiftForResize } from './layout.js';
 
 const { Engine, Bodies, Body, Composite, Constraint, Vector } = Matter;
 
@@ -63,6 +63,14 @@ export function createPhysics(initialLayout, callbacks, inputEl) {
     Body.setAngle(tile.body, (Math.random() - 0.5) * 0.8);
     Body.setVelocity(tile.body, { x: 0, y: 0 });
     Body.setAngularVelocity(tile.body, 0);
+  }
+
+  function scaleBody(body, factor) {
+    // Static bodies restore their pre-scale mass when released, so scale them as dynamic ones.
+    const wasStatic = body.isStatic;
+    if (wasStatic) Body.setStatic(body, false);
+    Body.scale(body, factor, factor);
+    if (wasStatic) Body.setStatic(body, true);
   }
 
   function fieldCenter(index) {
@@ -138,6 +146,8 @@ export function createPhysics(initialLayout, callbacks, inputEl) {
 
   function endDrag(notify) {
     if (!drag) return;
+    // A cancelled drag must not be picked up again by the next pointermove.
+    if (!notify && pointer) pointer.tile = null;
     Composite.remove(engine.world, drag.constraint);
     const { id } = drag.tile;
     drag = null;
@@ -153,6 +163,7 @@ export function createPhysics(initialLayout, callbacks, inputEl) {
 
   inputEl.addEventListener('pointerdown', (event) => {
     if (!inputEnabled || pointer) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
     const point = toLocal(event);
     inputEl.setPointerCapture(event.pointerId);
     pointer = { id: event.pointerId, start: point, startedAt: performance.now(), tile: pickTile(point), samples: [] };
@@ -187,7 +198,11 @@ export function createPhysics(initialLayout, callbacks, inputEl) {
   }
 
   inputEl.addEventListener('pointerup', onPointerEnd);
-  inputEl.addEventListener('pointercancel', onPointerEnd);
+  inputEl.addEventListener('pointercancel', (event) => {
+    if (!pointer || event.pointerId !== pointer.id) return;
+    endDrag(false);
+    pointer = null;
+  });
 
   function step(deltaMs) {
     Engine.update(engine, deltaMs);
@@ -218,16 +233,19 @@ export function createPhysics(initialLayout, callbacks, inputEl) {
       }));
     },
     relayout(next) {
-      const factor = next.tileSize / layout.tileSize;
+      const before = layout;
+      const factor = next.tileSize / before.tileSize;
       layout = next;
       buildBounds();
       for (const tile of tiles) {
-        if (factor !== 1) Body.scale(tile.body, factor, factor);
+        if (factor !== 1) scaleBody(tile.body, factor);
         if (tile.snappedField !== null) {
           Body.setPosition(tile.body, fieldCenter(tile.snappedField));
-        } else if (isOutside(tile.body.position.x, tile.body.position.y, layout) || tile.body.position.y > layout.floorY) {
-          placeAbove(tile, 0);
+          continue;
         }
+        // Loose tiles move with the floor instead of raining in again.
+        Body.setPosition(tile.body, shiftForResize(tile.body.position, before, layout));
+        if (isOutside(tile.body.position.x, tile.body.position.y, layout)) placeAbove(tile, 0);
       }
     },
     setInputEnabled(enabled) {
