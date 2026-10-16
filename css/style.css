@@ -139,3 +139,73 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   #rotate-hint .phone { animation: none; transform: rotate(-90deg); }
 }
+
+.field {
+  transition: box-shadow 150ms ease-out;
+}
+
+.field.glow {
+  box-shadow: 0 0 0 2px #fff, 0 0 22px 6px rgba(255, 255, 255, 0.8);
+  z-index: 1;
+}
+
+.comic {
+  position: absolute;
+  font: 900 var(--comic-size, 44px)/1 "Arial Black", Impact, sans-serif;
+  color: #fff;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  -webkit-text-stroke: 3px #0d2a52;
+  paint-order: stroke fill;
+  text-shadow: 4px 4px 0 #0d2a52;
+  transform-origin: 20% 80%;
+  opacity: 0;
+  animation: comic-pop 1000ms ease-out forwards;
+}
+
+@keyframes comic-pop {
+  0% { opacity: 0; transform: translate(-50%, -100%) rotate(calc(var(--r) - 10deg)) scale(calc(var(--s) * 0.2)); }
+  12% { opacity: 1; transform: translate(-50%, -100%) rotate(var(--r)) scale(calc(var(--s) * 1.25)); }
+  22% { transform: translate(-50%, -100%) rotate(var(--r)) scale(calc(var(--s) * 0.95)); }
+  30% { transform: translate(-50%, -100%) rotate(var(--r)) scale(var(--s)); }
+  75% { opacity: 1; transform: translate(-50%, calc(-100% - 6px)) rotate(var(--r)) scale(var(--s)); }
+  100% { opacity: 0; transform: translate(-50%, calc(-100% - 18px)) rotate(var(--r)) scale(calc(var(--s) * 1.05)); }
+}
+
+.comic.calm {
+  animation-name: comic-fade;
+}
+
+@keyframes comic-fade {
+  0% { opacity: 0; transform: translate(-50%, -100%) rotate(var(--r)) scale(var(--s)); }
+  20%, 70% { opacity: 1; transform: translate(-50%, -100%) rotate(var(--r)) scale(var(--s)); }
+  100% { opacity: 0; transform: translate(-50%, -100%) rotate(var(--r)) scale(var(--s)); }
+}
+
+.impact {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.impact b {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 30%;
+  background: #fff;
+  border-radius: 2px;
+  transform-origin: 50% 0;
+  transform: rotate(var(--a)) translateY(60%);
+  opacity: 0;
+  animation: speedline 350ms ease-out forwards;
+}
+
+@keyframes speedline {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(55%); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(110%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .impact { display: none; }
+}

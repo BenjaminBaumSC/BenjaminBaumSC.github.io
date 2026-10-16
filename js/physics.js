@@ -8,6 +8,8 @@ const TAP_MAX_MS = 300;
 const MAX_SPEED = 40;
 const WALL = 200;
 const STEP_MS = 1000 / 60;
+const SPEED_WINDOW_MS = 80;
+const COLLIDE_ALL = 0xffffffff;
 
 export function createPhysics(initialLayout, callbacks, inputEl) {
   const engine = Engine.create();
@@ -72,6 +74,8 @@ export function createPhysics(initialLayout, callbacks, inputEl) {
     const tile = tiles[tileId];
     tile.snappedField = fieldIndex;
     Body.setStatic(tile.body, true);
+    // Snapped tiles sit in the rack behind the scene; loose tiles pass in front.
+    tile.body.collisionFilter.mask = 0;
     Body.setAngle(tile.body, 0);
     Body.setPosition(tile.body, fieldCenter(fieldIndex));
   }
@@ -79,11 +83,9 @@ export function createPhysics(initialLayout, callbacks, inputEl) {
   function unsnap(tileId) {
     const tile = tiles[tileId];
     if (tile.snappedField === null) return;
-    const { x } = fieldCenter(tile.snappedField);
     tile.snappedField = null;
     Body.setStatic(tile.body, false);
-    // Lift the tile out of its slot so it does not start inside the floor.
-    Body.setPosition(tile.body, { x, y: layout.floorY - layout.tileSize / 2 - 1 });
+    tile.body.collisionFilter.mask = COLLIDE_ALL;
     Body.setVelocity(tile.body, { x: 0, y: 0 });
   }
 
@@ -127,24 +129,40 @@ export function createPhysics(initialLayout, callbacks, inputEl) {
     Composite.add(engine.world, drag.constraint);
   }
 
+  function pointerSpeed(samples) {
+    const last = samples.at(-1);
+    const first = samples.find((sample) => last.t - sample.t <= SPEED_WINDOW_MS) ?? last;
+    const elapsed = last.t - first.t;
+    return elapsed > 0 ? Math.hypot(last.x - first.x, last.y - first.y) / elapsed : 0;
+  }
+
   function endDrag(notify) {
     if (!drag) return;
     Composite.remove(engine.world, drag.constraint);
-    const { body, id } = drag.tile;
+    const { id } = drag.tile;
     drag = null;
-    if (notify) callbacks.onRelease?.(id, { x: body.position.x, y: body.position.y, speed: Body.getSpeed(body) });
+    if (!notify) return;
+    const last = pointer.samples.at(-1);
+    callbacks.onRelease?.(id, { x: last.x, y: last.y, speed: pointerSpeed(pointer.samples) });
+  }
+
+  function addSample(point) {
+    const t = performance.now();
+    pointer.samples = [...pointer.samples.filter((sample) => t - sample.t <= SPEED_WINDOW_MS * 2), { ...point, t }];
   }
 
   inputEl.addEventListener('pointerdown', (event) => {
     if (!inputEnabled || pointer) return;
     const point = toLocal(event);
     inputEl.setPointerCapture(event.pointerId);
-    pointer = { id: event.pointerId, start: point, startedAt: performance.now(), tile: pickTile(point) };
+    pointer = { id: event.pointerId, start: point, startedAt: performance.now(), tile: pickTile(point), samples: [] };
+    addSample(point);
   });
 
   inputEl.addEventListener('pointermove', (event) => {
     if (!pointer || event.pointerId !== pointer.id) return;
     const point = toLocal(event);
+    addSample(point);
     if (drag) {
       drag.constraint.pointA = point;
       return;
@@ -156,6 +174,7 @@ export function createPhysics(initialLayout, callbacks, inputEl) {
   function onPointerEnd(event) {
     if (!pointer || event.pointerId !== pointer.id) return;
     const point = toLocal(event);
+    addSample(point);
     const elapsed = performance.now() - pointer.startedAt;
     if (drag) {
       endDrag(inputEnabled);
@@ -220,7 +239,7 @@ export function createPhysics(initialLayout, callbacks, inputEl) {
         const tile = tiles[id];
         tile.visible = visible;
         // Hidden tiles must not collide with the visible ones.
-        tile.body.collisionFilter.mask = visible ? 0xffffffff : 0;
+        tile.body.collisionFilter.mask = visible && tile.snappedField === null ? COLLIDE_ALL : 0;
         if (!visible) Body.setStatic(tile.body, true);
       }
     },

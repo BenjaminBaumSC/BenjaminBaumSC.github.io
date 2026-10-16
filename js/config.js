@@ -14,7 +14,7 @@ export const KONAMI_TIMEOUT_MS = 5000;
 export const MAX_FIELD_SIZE = 64;
 export const MIN_HIT_SIZE = 40;
 
-// Matter.js speed is measured in px per 1/60 s step.
-export const SNAP_MAX_SPEED = 4;
-// How far above the floor a released tile still snaps, in field sizes.
-export const SNAP_CAPTURE_HEIGHT = 2.5;
+// Pointer speed at release in px/ms; faster counts as a throw.
+export const SNAP_MAX_POINTER_SPEED = 0.6;
+// How far outside a field the pointer may be, in field sizes.
+export const SNAP_TOLERANCE = 0.3;

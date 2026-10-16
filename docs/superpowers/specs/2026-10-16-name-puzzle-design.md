@@ -41,7 +41,7 @@ Die Szene ist eine Seitenansicht mit Schwerkraft nach unten.
   - `PROJ: BENJAMINBAUMSC`
   - `DWG: THE CAKE IS A LIE` (das ist der versteckte Hinweis)
   - `REV: 0.1 · BL. 1/1`
-- **Boden:** eine durchgehende Bodenlinie über die ganze Breite. Darauf liegt mittig die Spielfeld-Reihe als begrenzter Streifen, daneben ist schlichter Boden. Die Felder haben eine Maximalgröße von etwa 64 px, damit die Steine auf breiten Bildschirmen nicht riesig werden. Das Schriftfeld sitzt unten rechts unterhalb der Bodenlinie oder neben der Reihe und überlappt nicht mit den Feldern. Steine auf dem Boden neben der Reihe sind einfach frei. *(Claudes Entscheidung)*
+- **Boden:** eine durchgehende Bodenlinie über die ganze Breite, auf der die freien Steine liegen. **Die Spielfeld-Reihe hängt als Leiste etwa drei Feldhöhen über dem Boden**, sodass auch zwei gestapelte Steine darunter Platz haben. Freie Steine fliegen vor der Leiste vorbei und bleiben nie auf ihr liegen. Was in der Leiste sitzt, ist also immer eingerastet. (Benjamin, 16.10.2026, nach dem ersten Test: Steine, die direkt auf den Feldern lagen, sahen gelegt aus, ohne es zu sein.) Die Felder haben eine Maximalgröße von etwa 64 px, damit die Steine auf breiten Bildschirmen nicht riesig werden. Das Schriftfeld sitzt unten rechts unterhalb der Bodenlinie oder neben der Reihe und überlappt nicht mit den Feldern. Steine auf dem Boden neben der Reihe sind einfach frei. *(Claudes Entscheidung)*
 - **Spielfeld-Reihe:** 15 Felder nebeneinander, in den Prämienfarben der ersten Scrabble-Reihe:
   `3×W · – · – · 2×B · – · – · – · 3×W · – · – · – · 2×B · – · – · 3×W`
   Farben: 3× Wort `#c8423a`, 2× Wort `#e9a3a3`, 3× Buchstabe `#2f6db5`, 2× Buchstabe `#9cc8e8`, leere Felder als helle, halbtransparente Kästchen mit weißem Rand.
@@ -58,9 +58,9 @@ Beim Laden fallen die zwölf Steine von oben herein, ungefähr in Namensreihenfo
 Steine lassen sich mit Maus oder Finger greifen, ziehen und werfen. Sie kollidieren miteinander, mit dem Boden und mit den Seitenrändern des Fensters. Kein Stein darf die Szene dauerhaft verlassen.
 
 ### Einrasten
-- Ein Stein rastet ein, wenn man ihn **über einem freien Feld loslässt**. Geworfene Steine, die zufällig auf einem Feld landen, rasten nicht ein. Den Unterschied macht die Geschwindigkeit beim Loslassen.
-- Ein eingerasteter Stein sitzt gerade und exakt im Feld und bewegt sich nicht mehr. So unterscheidet er sich sichtbar von einem Stein, der nur schief auf einem Feld liegt.
-- Jedes Feld hält höchstens einen eingerasteten Stein. Frei liegende Steine, die im Weg sind, werden beim Einrasten weggeschoben.
+- Ein Stein rastet ein, wenn **der Mauszeiger bzw. Finger** beim Loslassen über einem freien Feld steht, mit etwas Toleranz um das Feld. Entscheidend ist die Geschwindigkeit des Zeigers kurz vor dem Loslassen: Wer ruhig ablegt, rastet ein, wer schwungvoll wirft, nicht. Gemessen wird bewusst am Zeiger und nicht am Stein, weil der Stein an einer Feder nachschwingt (Benjamin, 16.10.2026).
+- Ein eingerasteter Stein sitzt gerade und exakt im Feld und bewegt sich nicht mehr.
+- Jedes Feld hält höchstens einen eingerasteten Stein.
 - Zieht man einen eingerasteten Stein heraus, ist er wieder frei beweglich.
 
 ### Comic-Effekte statt Ton

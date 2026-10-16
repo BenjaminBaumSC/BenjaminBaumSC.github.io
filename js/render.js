@@ -5,6 +5,7 @@ import { TILES } from './config.js';
 const TILE_DEPTH = 0.32;
 const FOV = 30;
 const WOOD_SIDE = 0xdcbc80;
+const SQUASH_MS = 180;
 
 function letterTexture(letter, points) {
   const size = 256;
@@ -68,6 +69,7 @@ export function createRenderer(canvas, layout) {
   );
 
   let tileSize = layout.tileSize;
+  const squashes = new Map();
 
   function resize(next) {
     const { width, height } = next;
@@ -100,13 +102,29 @@ export function createRenderer(canvas, layout) {
     for (const state of tileStates) {
       const mesh = meshes.get(state.id);
       mesh.visible = state.visible;
-      mesh.position.set(state.x, -state.y, 0);
+      // Loose tiles move in front of the rack so they never clip snapped ones.
+      mesh.position.set(state.x, -state.y, state.snappedField === null ? TILE_DEPTH * tileSize : 0);
       mesh.rotation.z = -state.angle;
       mesh.scale.setScalar(tileSize);
+      const startedAt = squashes.get(state.id);
+      if (startedAt !== undefined) {
+        const t = (performance.now() - startedAt) / SQUASH_MS;
+        if (t >= 1) {
+          squashes.delete(state.id);
+        } else {
+          const amount = Math.sin(t * Math.PI);
+          mesh.scale.x *= 1 + 0.08 * amount;
+          mesh.scale.y *= 1 - 0.12 * amount;
+        }
+      }
     }
     renderer.render(scene, camera);
   }
 
   resize(layout);
-  return { resize, sync };
+  function squash(tileId) {
+    squashes.set(tileId, performance.now());
+  }
+
+  return { resize, sync, squash };
 }

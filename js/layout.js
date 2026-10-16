@@ -3,15 +3,19 @@ import { FIELD_COUNT, MAX_FIELD_SIZE, MIN_HIT_SIZE } from './config.js';
 const GUTTER = 16;
 // Room below the field row for the drawing's title block.
 const TITLE_BLOCK_SPACE = 68;
+// Distance from the floor to the top of the field row, in field sizes.
+const ROW_LIFT = 3.2;
 
 export function computeLayout(width, height) {
   const fieldSize = Math.min(MAX_FIELD_SIZE, Math.floor((width - 2 * GUTTER) / FIELD_COUNT));
   const tileSize = Math.round(fieldSize * 0.9);
-  const floorY = height - TITLE_BLOCK_SPACE - fieldSize;
+  const floorY = height - TITLE_BLOCK_SPACE;
+  // The row hangs above the floor so loose tiles never rest on it.
+  const rowY = floorY - fieldSize * ROW_LIFT;
   const rowX = (width - FIELD_COUNT * fieldSize) / 2;
   const fieldRects = Array.from({ length: FIELD_COUNT }, (_, i) => ({
     x: rowX + i * fieldSize,
-    y: floorY,
+    y: rowY,
     w: fieldSize,
     h: fieldSize,
   }));
@@ -23,6 +27,7 @@ export function computeLayout(width, height) {
     tileSize,
     hitSize: Math.max(tileSize, MIN_HIT_SIZE),
     floorY,
+    rowY,
     fieldRects,
   };
 }

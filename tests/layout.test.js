@@ -22,7 +22,8 @@ test('computeLayout fits a landscape phone', () => {
   for (const rect of layout.fieldRects) {
     assert.ok(rect.x >= 0 && rect.x + rect.w <= 812);
   }
-  assert.ok(layout.floorY + layout.fieldSize < 375);
+  assert.ok(layout.floorY < 375);
+  assert.ok(layout.rowY > 40);
   assert.ok(layout.hitSize >= 40);
 });
 
@@ -37,9 +38,10 @@ test('computeLayout lays fields left to right without overlap', () => {
   }
 });
 
-test('computeLayout puts field tops on the floor line', () => {
+test('computeLayout hangs the field row above the floor with room for a tile', () => {
   const layout = computeLayout(1280, 720);
-  assert.ok(layout.fieldRects.every((rect) => rect.y === layout.floorY));
+  assert.ok(layout.fieldRects.every((rect) => rect.y === layout.rowY));
+  assert.ok(layout.rowY + layout.fieldSize <= layout.floorY - layout.tileSize);
 });
 
 test('isOutside detects positions that left the scene', () => {

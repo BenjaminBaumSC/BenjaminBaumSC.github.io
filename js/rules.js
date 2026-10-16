@@ -2,8 +2,8 @@ import {
   KONAMI_SEQUENCE,
   KONAMI_TAIL,
   KONAMI_TIMEOUT_MS,
-  SNAP_MAX_SPEED,
-  SNAP_CAPTURE_HEIGHT,
+  SNAP_MAX_POINTER_SPEED,
+  SNAP_TOLERANCE,
 } from './config.js';
 
 export function findWord(fieldLetters, words) {
@@ -35,14 +35,21 @@ export function createWordWatcher(words) {
   };
 }
 
-export function pickSnapField({ x, y, speed }, fieldRects, occupied, floorY) {
-  if (speed > SNAP_MAX_SPEED) return -1;
-  const index = fieldRects.findIndex((rect) => x >= rect.x && x < rect.x + rect.w);
-  if (index < 0 || occupied[index]) return -1;
-  const rect = fieldRects[index];
-  const top = floorY - SNAP_CAPTURE_HEIGHT * rect.h;
-  const bottom = floorY + rect.h;
-  return y >= top && y <= bottom ? index : -1;
+export function pickSnapField({ x, y, speed }, fieldRects, occupied) {
+  if (speed > SNAP_MAX_POINTER_SPEED) return -1;
+  let best = -1;
+  let bestDistance = Infinity;
+  fieldRects.forEach((rect, i) => {
+    if (occupied[i]) return;
+    const margin = SNAP_TOLERANCE * rect.w;
+    const inside = x >= rect.x - margin && x <= rect.x + rect.w + margin && y >= rect.y - margin && y <= rect.y + rect.h + margin;
+    const distance = Math.hypot(x - (rect.x + rect.w / 2), y - (rect.y + rect.h / 2));
+    if (inside && distance < bestDistance) {
+      best = i;
+      bestDistance = distance;
+    }
+  });
+  return best;
 }
 
 export function createKonamiDetector() {
@@ -81,4 +88,12 @@ export function swipeDirection(dx, dy, minDistance = 30) {
   if (Math.max(Math.abs(dx), Math.abs(dy)) < minDistance) return null;
   if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? 'right' : 'left';
   return dy > 0 ? 'down' : 'up';
+}
+
+export function fieldLetters(tileStates, fieldCount) {
+  const letters = Array(fieldCount).fill(null);
+  for (const tile of tileStates) {
+    if (tile.snappedField !== null) letters[tile.snappedField] = tile.letter;
+  }
+  return letters;
 }

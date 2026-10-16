@@ -5,8 +5,8 @@ import {
   SECRET_WORDS,
   KONAMI_SEQUENCE,
   KONAMI_TIMEOUT_MS,
-  SNAP_MAX_SPEED,
-  SNAP_CAPTURE_HEIGHT,
+  SNAP_MAX_POINTER_SPEED,
+  SNAP_TOLERANCE,
 } from '../js/config.js';
 import {
   findWord,
@@ -14,6 +14,7 @@ import {
   pickSnapField,
   createKonamiDetector,
   swipeDirection,
+  fieldLetters,
 } from '../js/rules.js';
 
 function row(letters, start = 0) {
@@ -55,31 +56,36 @@ test('createWordWatcher reports a word only when it is formed', () => {
 });
 
 const FIELD = 50;
-const FLOOR_Y = 300;
-const fieldRects = Array.from({ length: FIELD_COUNT }, (_, i) => ({ x: 100 + i * FIELD, y: FLOOR_Y, w: FIELD, h: FIELD }));
+const ROW_Y = 200;
+const fieldRects = Array.from({ length: FIELD_COUNT }, (_, i) => ({ x: 100 + i * FIELD, y: ROW_Y, w: FIELD, h: FIELD }));
 const free = Array(FIELD_COUNT).fill(false);
-const overField2 = { x: 100 + 2 * FIELD + FIELD / 2, y: FLOOR_Y - FIELD / 2 };
+const field2Center = { x: 100 + 2 * FIELD + FIELD / 2, y: ROW_Y + FIELD / 2 };
 
-test('pickSnapField picks the free field below a slowly released tile', () => {
-  assert.equal(pickSnapField({ ...overField2, speed: 0 }, fieldRects, free, FLOOR_Y), 2);
+test('pickSnapField picks the free field under a slow pointer', () => {
+  assert.equal(pickSnapField({ ...field2Center, speed: 0 }, fieldRects, free), 2);
 });
 
-test('pickSnapField rejects a thrown tile', () => {
-  assert.equal(pickSnapField({ ...overField2, speed: SNAP_MAX_SPEED + 1 }, fieldRects, free, FLOOR_Y), -1);
+test('pickSnapField tolerates a pointer slightly outside the field', () => {
+  const y = ROW_Y - SNAP_TOLERANCE * FIELD * 0.9;
+  assert.equal(pickSnapField({ x: field2Center.x, y, speed: 0 }, fieldRects, free), 2);
+});
+
+test('pickSnapField rejects a pointer that moves fast at release', () => {
+  assert.equal(pickSnapField({ ...field2Center, speed: SNAP_MAX_POINTER_SPEED + 0.01 }, fieldRects, free), -1);
 });
 
 test('pickSnapField rejects an occupied field', () => {
   const occupied = free.map((_, i) => i === 2);
-  assert.equal(pickSnapField({ ...overField2, speed: 0 }, fieldRects, occupied, FLOOR_Y), -1);
+  assert.equal(pickSnapField({ ...field2Center, speed: 0 }, fieldRects, occupied), -1);
 });
 
-test('pickSnapField rejects a tile beside the row', () => {
-  assert.equal(pickSnapField({ x: 50, y: FLOOR_Y - FIELD / 2, speed: 0 }, fieldRects, free, FLOOR_Y), -1);
+test('pickSnapField rejects a pointer beside the row', () => {
+  assert.equal(pickSnapField({ x: 50, y: field2Center.y, speed: 0 }, fieldRects, free), -1);
 });
 
-test('pickSnapField rejects a tile released too high above the floor', () => {
-  const y = FLOOR_Y - SNAP_CAPTURE_HEIGHT * FIELD - 1;
-  assert.equal(pickSnapField({ x: overField2.x, y, speed: 0 }, fieldRects, free, FLOOR_Y), -1);
+test('pickSnapField rejects a pointer far above or below the row', () => {
+  assert.equal(pickSnapField({ x: field2Center.x, y: ROW_Y - FIELD, speed: 0 }, fieldRects, free), -1);
+  assert.equal(pickSnapField({ x: field2Center.x, y: ROW_Y + 2 * FIELD, speed: 0 }, fieldRects, free), -1);
 });
 
 function enterSequence(konami, sequence, now) {
@@ -127,4 +133,11 @@ test('swipeDirection maps dominant axis to a direction', () => {
   assert.equal(swipeDirection(0, -80), 'up');
   assert.equal(swipeDirection(90, 10), 'right');
   assert.equal(swipeDirection(10, 10), null);
+});
+
+test('fieldLetters maps snapped tiles onto their fields', () => {
+  const letters = fieldLetters([{ letter: 'B', snappedField: 2 }, { letter: 'E', snappedField: null }], 15);
+  assert.equal(letters.length, 15);
+  assert.equal(letters[2], 'B');
+  assert.equal(letters.filter((l) => l !== null).length, 1);
 });
