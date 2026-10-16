@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   FIELD_COUNT,
+  FIELD_PREMIUMS,
+  POINTS,
   SECRET_WORDS,
   KONAMI_SEQUENCE,
   KONAMI_TIMEOUT_MS,
@@ -9,7 +11,8 @@ import {
   SNAP_TOLERANCE,
 } from '../js/config.js';
 import {
-  findWord,
+  findWords,
+  scoreRow,
   createWordWatcher,
   pickSnapField,
   createKonamiDetector,
@@ -26,34 +29,78 @@ function row(letters, start = 0) {
   return fields;
 }
 
-test('findWord finds a bounded word in the middle of the row', () => {
-  assert.deepEqual(findWord(row('BENNI', 1), SECRET_WORDS), { word: 'BENNI', start: 1 });
+const words = (matches) => matches.map((m) => `${m.word}@${m.start}`);
+
+test('findWords finds a bounded word in the middle of the row', () => {
+  assert.deepEqual(words(findWords(row('BENNI', 1), SECRET_WORDS)), ['BENNI@1']);
 });
 
-test('findWord finds words touching either edge of the row', () => {
-  assert.deepEqual(findWord(row('NINJA', 0), SECRET_WORDS), { word: 'NINJA', start: 0 });
-  assert.deepEqual(findWord(row('BENNI', 10), SECRET_WORDS), { word: 'BENNI', start: 10 });
+test('findWords finds words touching either edge of the row', () => {
+  assert.deepEqual(words(findWords(row('NINJA', 0), SECRET_WORDS)), ['NINJA@0']);
+  assert.deepEqual(words(findWords(row('BENNI', 10), SECRET_WORDS)), ['BENNI@10']);
 });
 
-test('findWord ignores a word with an extra adjacent letter', () => {
-  assert.equal(findWord(row('BENNIA', 0), SECRET_WORDS), null);
+test('findWords ignores a word with an extra adjacent letter', () => {
+  assert.deepEqual(findWords(row('BENNIA', 0), SECRET_WORDS), []);
 });
 
-test('findWord ignores a word interrupted by a gap', () => {
-  assert.equal(findWord(row('BEN_NI', 0), SECRET_WORDS), null);
+test('findWords ignores a word interrupted by a gap', () => {
+  assert.deepEqual(findWords(row('BEN_NI', 0), SECRET_WORDS), []);
 });
 
-test('findWord returns null for an empty row', () => {
-  assert.equal(findWord(row(''), SECRET_WORDS), null);
+test('findWords returns nothing for an empty row', () => {
+  assert.deepEqual(findWords(row(''), SECRET_WORDS), []);
+});
+
+test('findWords reads a space as exactly one empty field', () => {
+  assert.deepEqual(words(findWords(row('BENJAMIN_BAUM', 0), SECRET_WORDS)), ['BENJAMIN BAUM@0']);
+  assert.deepEqual(words(findWords(row('BENJAMIN_BAUM', 2), SECRET_WORDS)), ['BENJAMIN BAUM@2']);
+});
+
+test('findWords rejects the name with two gaps or an extra letter', () => {
+  assert.deepEqual(findWords(row('BENJAMIN__BAUM', 0), SECRET_WORDS), []);
+  assert.deepEqual(findWords(row('BENJAMIN_BAUMA', 0), SECRET_WORDS), []);
+});
+
+test('findWords reports several words lying at once', () => {
+  assert.deepEqual(words(findWords(row('MINI_BEN32', 0), SECRET_WORDS)), ['MINI@0', 'BEN32@5']);
 });
 
 test('createWordWatcher reports a word only when it is formed', () => {
   const watcher = createWordWatcher(SECRET_WORDS);
   const formed = row('BENNI', 2);
-  assert.equal(watcher.update(formed), 'BENNI');
-  assert.equal(watcher.update([...formed]), null);
-  assert.equal(watcher.update(row('BENN', 2)), null);
-  assert.equal(watcher.update(row('BENNI', 2)), 'BENNI');
+  assert.deepEqual(words(watcher.update(formed)), ['BENNI@2']);
+  assert.deepEqual(watcher.update([...formed]), []);
+  assert.deepEqual(watcher.update(row('BENN', 2)), []);
+  assert.deepEqual(words(watcher.update(row('BENNI', 2))), ['BENNI@2']);
+});
+
+test('createWordWatcher reports only the newly formed word next to an old one', () => {
+  const watcher = createWordWatcher(SECRET_WORDS);
+  watcher.update(row('MINI', 0));
+  assert.deepEqual(words(watcher.update(row('MINI_BEN32', 0))), ['BEN32@5']);
+});
+
+test('scoreRow counts a plain letter by its points', () => {
+  assert.equal(scoreRow(row('B', 1), FIELD_PREMIUMS, POINTS), 3);
+});
+
+test('scoreRow doubles a letter on a double letter field', () => {
+  assert.equal(scoreRow(row('B', 3), FIELD_PREMIUMS, POINTS), 6);
+});
+
+test('scoreRow triples a word touching a triple word field', () => {
+  assert.equal(scoreRow(row('BEN', 0), FIELD_PREMIUMS, POINTS), 15);
+});
+
+test('scoreRow multiplies by nine for two triple word fields and sums words', () => {
+  // BENJAMIN on 0-7: 17 points plus J doubled on DL 3, times 9 for TW 0 and TW 7.
+  // BAUM on 9-12 has U on DL 11: 3+1+2+3.
+  assert.equal(scoreRow(row('BENJAMIN_BAUM', 0), FIELD_PREMIUMS, POINTS), (17 + 6) * 9 + 9);
+});
+
+test('scoreRow counts digits by their face value', () => {
+  assert.equal(scoreRow(row('8', 1), FIELD_PREMIUMS, POINTS), 8);
 });
 
 const FIELD = 50;

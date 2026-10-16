@@ -1,11 +1,13 @@
-const POINTS = { A: 1, B: 3, E: 1, I: 1, J: 6, M: 3, N: 1, U: 1 };
+export const POINTS = { A: 1, B: 3, C: 4, D: 1, E: 1, I: 1, J: 6, M: 3, N: 1, O: 2, T: 1, U: 1, 2: 2, 3: 3, 4: 4, 8: 8 };
 
 export const TILES = [...'BENJAMINBAUM'].map((letter, id) => ({ id, letter, points: POINTS[letter] }));
+// Delivered after BENJAMIN BAUM; enough for MINI, CODUMO, BITU84 and BEN32.
+export const EXTRA_TILES = [...'ICOODT8432'].map((letter, i) => ({ id: TILES.length + i, letter, points: POINTS[letter] }));
 
 export const FIELD_COUNT = 15;
 export const FIELD_PREMIUMS = ['TW', null, null, 'DL', null, null, null, 'TW', null, null, null, 'DL', null, null, 'TW'];
 
-export const SECRET_WORDS = ['BENNI', 'NINJA'];
+export const SECRET_WORDS = ['BENNI', 'NINJA', 'BENJAMIN BAUM', 'MINI', 'CODUMO', 'BITU84', 'BEN32'];
 
 export const KONAMI_SEQUENCE = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right'];
 export const KONAMI_TAIL = ['B', 'A'];

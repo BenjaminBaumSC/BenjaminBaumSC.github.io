@@ -6,33 +6,48 @@ import {
   SNAP_TOLERANCE,
 } from './config.js';
 
-export function findWord(fieldLetters, words) {
-  let start = 0;
-  while (start < fieldLetters.length) {
-    if (fieldLetters[start] === null) {
-      start++;
-      continue;
+// A space in a word stands for exactly one empty field.
+export function findWords(fieldLetters, words) {
+  const row = `.${fieldLetters.map((letter) => letter ?? '.').join('')}.`;
+  const matches = [];
+  for (const word of words) {
+    const pattern = `.${word.replaceAll(' ', '.')}.`;
+    for (let i = row.indexOf(pattern); i >= 0; i = row.indexOf(pattern, i + 1)) {
+      matches.push({ word, start: i });
     }
-    let end = start;
-    while (end < fieldLetters.length && fieldLetters[end] !== null) end++;
-    const run = fieldLetters.slice(start, end).join('');
-    if (words.includes(run)) return { word: run, start };
-    start = end;
   }
-  return null;
+  return matches.sort((a, b) => a.start - b.start);
 }
 
 export function createWordWatcher(words) {
-  let current = null;
+  let current = new Set();
   return {
     update(fieldLetters) {
-      const match = findWord(fieldLetters, words);
-      const key = match ? `${match.word}@${match.start}` : null;
-      const formed = key !== null && key !== current;
-      current = key;
-      return formed ? match.word : null;
+      const matches = findWords(fieldLetters, words);
+      const keys = new Set(matches.map((m) => `${m.word}@${m.start}`));
+      const formed = matches.filter((m) => !current.has(`${m.word}@${m.start}`));
+      current = keys;
+      return formed;
     },
   };
+}
+
+export function scoreRow(fieldLetters, premiums, points) {
+  let total = 0;
+  let sum = 0;
+  let factor = 1;
+  fieldLetters.forEach((letter, i) => {
+    if (letter !== null) {
+      sum += points[letter] * (premiums[i] === 'DL' ? 2 : 1);
+      if (premiums[i] === 'TW') factor *= 3;
+    }
+    if (letter === null || i === fieldLetters.length - 1) {
+      total += sum * factor;
+      sum = 0;
+      factor = 1;
+    }
+  });
+  return total;
 }
 
 export function pickSnapField({ x, y, speed }, fieldRects, occupied) {

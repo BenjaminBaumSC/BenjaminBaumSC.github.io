@@ -1,6 +1,6 @@
 import { FIELD_COUNT, FIELD_PREMIUMS, SECRET_WORDS } from './config.js';
 import { computeLayout, createStepper } from './layout.js';
-import { createKonamiDetector, createRewardGate, createWordWatcher, fieldLetters, findWord, pickSnapField, swipeDirection } from './rules.js';
+import { createKonamiDetector, createRewardGate, createWordWatcher, fieldLetters, pickSnapField, swipeDirection } from './rules.js';
 import { createPhysics } from './physics.js';
 import { createRenderer } from './render.js';
 import { glowFields, showComicWord, showImpact } from './fx.js';
@@ -71,10 +71,8 @@ async function playReward(name, match) {
 }
 
 function checkWords() {
-  const letters = currentLetters();
-  const word = wordWatcher.update(letters);
-  if (!word) return;
-  playReward(word, findWord(letters, SECRET_WORDS));
+  const [match] = wordWatcher.update(currentLetters());
+  if (match && REWARDS[match.word]) playReward(match.word, match);
 }
 
 function onGrab(tileId) {
