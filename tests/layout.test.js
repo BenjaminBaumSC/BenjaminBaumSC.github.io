@@ -1,0 +1,58 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { computeLayout, isOutside, clampDelta } from '../js/layout.js';
+
+test('computeLayout caps fields at 64 px on a large desktop', () => {
+  const layout = computeLayout(1920, 1080);
+  assert.equal(layout.fieldSize, 64);
+  assert.equal(layout.fieldRects.length, 15);
+  assert.equal(layout.portrait, false);
+});
+
+test('computeLayout centers the field row', () => {
+  const layout = computeLayout(1920, 1080);
+  const first = layout.fieldRects[0];
+  const last = layout.fieldRects.at(-1);
+  assert.ok(Math.abs(first.x - (1920 - (last.x + last.w))) <= 1);
+});
+
+test('computeLayout fits a landscape phone', () => {
+  const layout = computeLayout(812, 375);
+  assert.ok(layout.fieldSize >= 48);
+  for (const rect of layout.fieldRects) {
+    assert.ok(rect.x >= 0 && rect.x + rect.w <= 812);
+  }
+  assert.ok(layout.floorY + layout.fieldSize < 375);
+  assert.ok(layout.hitSize >= 40);
+});
+
+test('computeLayout flags portrait viewports', () => {
+  assert.equal(computeLayout(375, 812).portrait, true);
+});
+
+test('computeLayout lays fields left to right without overlap', () => {
+  const { fieldRects } = computeLayout(1280, 720);
+  for (let i = 0; i < fieldRects.length - 1; i++) {
+    assert.ok(fieldRects[i + 1].x >= fieldRects[i].x + fieldRects[i].w);
+  }
+});
+
+test('computeLayout puts field tops on the floor line', () => {
+  const layout = computeLayout(1280, 720);
+  assert.ok(layout.fieldRects.every((rect) => rect.y === layout.floorY));
+});
+
+test('isOutside detects positions that left the scene', () => {
+  const layout = computeLayout(1280, 720);
+  assert.equal(isOutside(640, 360, layout), false);
+  assert.equal(isOutside(-10, 360, layout), true);
+  assert.equal(isOutside(640, 730, layout), true);
+  assert.equal(isOutside(640, -730, layout), true);
+  assert.equal(isOutside(640, -50, layout), false);
+});
+
+test('clampDelta limits frame time to one 60 Hz step', () => {
+  assert.equal(clampDelta(500), 1000 / 60);
+  assert.equal(clampDelta(8), 8);
+  assert.equal(clampDelta(-3), 0);
+});
