@@ -2,7 +2,7 @@ import { FIELD_COUNT, MAX_FIELD_SIZE, MIN_HIT_SIZE } from './config.js';
 
 const GUTTER = 16;
 // Room below the field row for the drawing's title block.
-const TITLE_BLOCK_SPACE = 60;
+const TITLE_BLOCK_SPACE = 68;
 
 export function computeLayout(width, height) {
   const fieldSize = Math.min(MAX_FIELD_SIZE, Math.floor((width - 2 * GUTTER) / FIELD_COUNT));

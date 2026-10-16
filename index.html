@@ -1,169 +1,47 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="de">
 <head>
-  <title>n8n Chat Widget POC</title>
-  <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css" rel="stylesheet" />
-  <style>
-    body {
-      background-image: url('smartcommerce-web.png');
-      background-size: cover;        /* Deckt den ganzen Hintergrund ab */
-      background-repeat: no-repeat;  /* Kein Wiederholen */
-      background-position: top center;   /* Zentriert das Bild */
-      height: 12000px;                 /* Volle Höhe des Viewports */
-      margin: 0;                     /* Kein Standard-Abstand */
-
-      font-family: Arial, Helvetica, sans-serif;
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Benjamin Baum</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+      }
     }
-    #n8n-chat img {
-      max-width: 300px; /* Oder 100%, je nachdem */
-      height: auto;
-      display: block; /* optional: entfernt Lücken unter dem Bild */
-    }
-    :root {
-      /* Colors */
-      --chat--color-primary: #e74266;
-      --chat--color-primary-shade-50: #db4061;
-      --chat--color-primary-shade-100: #cf3c5c;
-      --chat--color-secondary: #20b69e;
-      --chat--color-secondary-shade-50: #1ca08a;
-      --chat--color-white: #ffffff;
-      --chat--color-light: #f2f4f8;
-      --chat--color-light-shade-50: #e6e9f1;
-      --chat--color-light-shade-100: #c2c5cc;
-      --chat--color-medium: #d2d4d9;
-      --chat--color-dark: rgb(1, 15, 28);
-      --chat--color-disabled: #777980;
-      --chat--color-typing: #404040;
-      --sc-blue:rgb(68, 104, 240);
-      --sc-yellow: rgb(252, 170, 30);
-
-      /* Base Layout */
-      --chat--spacing: 1rem;
-      --chat--border-radius: 0.25rem;
-      --chat--transition-duration: 0.15s;
-      --chat--font-family: (
-      Montserrat,
-      "Segoe UI",
-      Roboto,
-      "Helvetica Neue",
-      sans-serif
-    );
-
-      /* Window Dimensions */
-      --chat--window--width: 400px;
-      --chat--window--height: 600px;
-      --chat--window--bottom: var(--chat--spacing);
-      --chat--window--right: var(--chat--spacing);
-      --chat--window--z-index: 9999;
-      --chat--window--border: 1px solid var(--chat--color-light-shade-50);
-      --chat--window--border-radius: var(--chat--border-radius);
-      --chat--window--margin-bottom: var(--chat--spacing);
-
-      /* Header Styles */
-      --chat--header-height: auto;
-      --chat--header--padding: var(--chat--spacing);
-      --chat--header--background: var(--sc-blue);
-      --chat--header--color: var(--chat--color-light);
-      --chat--header--border-top: none;
-      --chat--header--border-bottom: none;
-      --chat--header--border-left: none;
-      --chat--header--border-right: none;
-      --chat--heading--font-size: 1em;
-      --chat--subtitle--font-size: inherit;
-      --chat--subtitle--line-height: 1.8;
-
-      /* Message Styles */
-      --chat--message--font-size: 0.75rem;
-      --chat--message--padding: var(--chat--spacing);
-      --chat--message--border-radius: var(--chat--border-radius);
-      --chat--message-line-height: 1.5;
-      --chat--message--margin-bottom: calc(var(--chat--spacing) * 1);
-      --chat--message--bot--background: var(--chat--color-white);
-      --chat--message--bot--color: var(--chat--color-dark);
-      --chat--message--bot--border: none;
-      --chat--message--user--background: var(--sc-yellow);
-      --chat--message--user--color: var(--chat--color-dark);
-      --chat--message--user--border: none;
-      --chat--message--pre--background: rgba(0, 0, 0, 0.05);
-      --chat--messages-list--padding: var(--chat--spacing);
-
-      /* Toggle Button */
-      --chat--toggle--size: 64px;
-      --chat--toggle--width: var(--chat--toggle--size);
-      --chat--toggle--height: var(--chat--toggle--size);
-      --chat--toggle--border-radius: 50%;
-      --chat--toggle--background: var(--sc-blue);
-      --chat--toggle--hover--background: var(--sc-yellow);
-      --chat--toggle--active--background: var(--sc-yellow);
-      --chat--toggle--color: var(--chat--color-white);
-
-      /* Input Area */
-      --chat--textarea--height: 50px;
-      --chat--textarea--max-height: 30rem;
-      --chat--input--font-size: inherit;
-      --chat--input--border: 0;
-      --chat--input--border-radius: 0;
-      --chat--input--padding: 0.8rem;
-      --chat--input--background: var(--chat--color-white);
-      --chat--input--text-color: initial;
-      --chat--input--line-height: 1.5;
-      --chat--input--placeholder--font-size: var(--chat--input--font-size);
-      --chat--input--border-active: 0;
-      --chat--input--left--panel--width: 2rem;
-
-      /* Button Styles */
-      --chat--button--color: var(--chat--color-light);
-      --chat--button--background: var(--chat--color-primary);
-      --chat--button--padding: calc(var(--chat--spacing) * 1 / 2) var(--chat--spacing);
-      --chat--button--border-radius: var(--chat--border-radius);
-      --chat--button--hover--color: var(--chat--color-light);
-      --chat--button--hover--background: var(--chat--color-primary-shade-50);
-      --chat--close--button--color-hover: var(--chat--color-primary);
-
-      /* Send and File Buttons */
-      --chat--input--send--button--background: var(--chat--color-white);
-      --chat--input--send--button--color: var(--chat--color-light);
-      --chat--input--send--button--background-hover: var(--chat--color-primary-shade-50);
-      --chat--input--send--button--color-hover: var(--chat--color-secondary-shade-50);
-      --chat--input--file--button--background: var(--chat--color-white);
-      --chat--input--file--button--color: var(--chat--color-secondary);
-      --chat--input--file--button--background-hover: var(--chat--input--file--button--background);
-      --chat--input--file--button--color-hover: var(--chat--color-secondary-shade-50);
-      --chat--files-spacing: 0.25rem;
-
-      /* Body and Footer */
-      --chat--body--background: var(--chat--color-light);
-      --chat--footer--background: var(--chat--color-light);
-      --chat--footer--color: var(--chat--color-dark);
-    }
-
-    .chat-layout .chat-header h1 {
-      margin: 0;
-    }
-
-  </style>
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
 </head>
 <body>
-<script type="module">
-  import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
+  <main id="scene">
+    <div class="label">FIG. 2 — SPIELFELD, SCHNITT A–A</div>
+    <div id="fields"></div>
+    <div id="floor"></div>
+    <div class="title-block">
+      <div>PROJ: BENJAMINBAUMSC</div>
+      <div>DWG: THE CAKE IS A LIE</div>
+      <div>REV: 0.1 · BL. 1/1</div>
+    </div>
+    <canvas id="tiles"></canvas>
+    <div id="fx"></div>
+    <div id="reward"></div>
+  </main>
 
-  createChat({
-    webhookUrl: 'https://n8n.s11e.io/webhook/4f4b2399-671a-4dbb-b320-e57b2e9d7bb0/chat',
-    showWelcomeScreen: false,
-    defaultLanguage: 'de',
-    initialMessages: [
-      'Guten Tag! Ich bin Smartie, Ihr professioneller KI-Assistent. Wie kann ich Ihnen heute behilflich sein?'
-    ],
-    i18n: {
-      de: {
-        title: 'SC Website Agent (POC V1.2)',
-        subtitle: '',
-        footer: '',
-        getStarted: 'Neue Anfrage',
-        inputPlaceholder: 'Ihre Anfrage...',
-      },
-    },
-  });
-</script>
+  <div id="rotate-hint">
+    <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+      <g class="phone">
+        <rect x="40" y="20" width="40" height="76" rx="6" />
+        <line x1="54" y1="88" x2="66" y2="88" />
+      </g>
+      <path d="M 96 40 A 44 44 0 0 1 96 80" />
+      <path d="M 90 76 L 96 82 L 102 75" />
+    </svg>
+    <div>FIG. 3 — BITTE DREHEN</div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

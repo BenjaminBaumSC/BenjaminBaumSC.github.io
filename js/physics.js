@@ -1,0 +1,234 @@
+import { TILES } from './config.js';
+import { isOutside } from './layout.js';
+
+const { Engine, Bodies, Body, Composite, Constraint, Vector } = Matter;
+
+const TAP_MAX_MOVE = 6;
+const TAP_MAX_MS = 300;
+const MAX_SPEED = 40;
+const WALL = 200;
+const STEP_MS = 1000 / 60;
+
+export function createPhysics(initialLayout, callbacks, inputEl) {
+  const engine = Engine.create();
+  engine.positionIterations = 10;
+  engine.velocityIterations = 8;
+
+  let layout = initialLayout;
+  let inputEnabled = true;
+  let bounds = [];
+  let pointer = null;
+  let drag = null;
+
+  const tiles = TILES.map((tile) => ({
+    ...tile,
+    body: createTileBody(layout.tileSize),
+    snappedField: null,
+    visible: true,
+  }));
+  Composite.add(engine.world, tiles.map((t) => t.body));
+  buildBounds();
+  tiles.forEach((tile, i) => placeAbove(tile, i));
+
+  function createTileBody(size) {
+    return Bodies.rectangle(0, 0, size, size, {
+      chamfer: { radius: size * 0.1 },
+      restitution: 0.15,
+      friction: 0.6,
+      frictionAir: 0.012,
+      density: 0.002,
+    });
+  }
+
+  function buildBounds() {
+    Composite.remove(engine.world, bounds);
+    const { width, height, floorY } = layout;
+    bounds = [
+      Bodies.rectangle(width / 2, floorY + WALL / 2, width + 2 * WALL, WALL, { isStatic: true }),
+      Bodies.rectangle(-WALL / 2, 0, WALL, height * 4, { isStatic: true }),
+      Bodies.rectangle(width + WALL / 2, 0, WALL, height * 4, { isStatic: true }),
+    ];
+    Composite.add(engine.world, bounds);
+  }
+
+  function placeAbove(tile, order) {
+    const { width, tileSize } = layout;
+    // A narrow drop zone makes some tiles land on top of each other.
+    const span = width * 0.45;
+    const x = (width - span) / 2 +(span * (tile.id + 0.5)) / tiles.length + (Math.random() - 0.5) * tileSize * 0.6;
+    Body.setStatic(tile.body, false);
+    Body.setPosition(tile.body, { x, y: -tileSize * (1 + order * 0.7) });
+    Body.setAngle(tile.body, (Math.random() - 0.5) * 0.8);
+    Body.setVelocity(tile.body, { x: 0, y: 0 });
+    Body.setAngularVelocity(tile.body, 0);
+  }
+
+  function fieldCenter(index) {
+    const rect = layout.fieldRects[index];
+    return { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 };
+  }
+
+  function snap(tileId, fieldIndex) {
+    const tile = tiles[tileId];
+    tile.snappedField = fieldIndex;
+    Body.setStatic(tile.body, true);
+    Body.setAngle(tile.body, 0);
+    Body.setPosition(tile.body, fieldCenter(fieldIndex));
+  }
+
+  function unsnap(tileId) {
+    const tile = tiles[tileId];
+    if (tile.snappedField === null) return;
+    const { x } = fieldCenter(tile.snappedField);
+    tile.snappedField = null;
+    Body.setStatic(tile.body, false);
+    // Lift the tile out of its slot so it does not start inside the floor.
+    Body.setPosition(tile.body, { x, y: layout.floorY - layout.tileSize / 2 - 1 });
+    Body.setVelocity(tile.body, { x: 0, y: 0 });
+  }
+
+  function pickTile(point) {
+    let best = null;
+    let bestDistance = Infinity;
+    for (const tile of tiles) {
+      if (!tile.visible) continue;
+      const dx = Math.abs(point.x - tile.body.position.x);
+      const dy = Math.abs(point.y - tile.body.position.y);
+      if (Math.max(dx, dy) > layout.hitSize / 2) continue;
+      const distance = Math.hypot(dx, dy);
+      if (distance < bestDistance) {
+        best = tile;
+        bestDistance = distance;
+      }
+    }
+    return best;
+  }
+
+  function toLocal(event) {
+    const rect = inputEl.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  }
+
+  function startDrag(tile, point) {
+    callbacks.onGrab?.(tile.id);
+    const body = tile.body;
+    drag = {
+      tile,
+      constraint: Constraint.create({
+        pointA: point,
+        bodyB: body,
+        pointB: Vector.sub(point, body.position),
+        angleB: body.angle,
+        stiffness: 0.2,
+        damping: 0.1,
+        length: 0,
+      }),
+    };
+    Composite.add(engine.world, drag.constraint);
+  }
+
+  function endDrag(notify) {
+    if (!drag) return;
+    Composite.remove(engine.world, drag.constraint);
+    const { body, id } = drag.tile;
+    drag = null;
+    if (notify) callbacks.onRelease?.(id, { x: body.position.x, y: body.position.y, speed: Body.getSpeed(body) });
+  }
+
+  inputEl.addEventListener('pointerdown', (event) => {
+    if (!inputEnabled || pointer) return;
+    const point = toLocal(event);
+    inputEl.setPointerCapture(event.pointerId);
+    pointer = { id: event.pointerId, start: point, startedAt: performance.now(), tile: pickTile(point) };
+  });
+
+  inputEl.addEventListener('pointermove', (event) => {
+    if (!pointer || event.pointerId !== pointer.id) return;
+    const point = toLocal(event);
+    if (drag) {
+      drag.constraint.pointA = point;
+      return;
+    }
+    const moved = Math.hypot(point.x - pointer.start.x, point.y - pointer.start.y);
+    if (pointer.tile && inputEnabled && moved > TAP_MAX_MOVE) startDrag(pointer.tile, point);
+  });
+
+  function onPointerEnd(event) {
+    if (!pointer || event.pointerId !== pointer.id) return;
+    const point = toLocal(event);
+    const elapsed = performance.now() - pointer.startedAt;
+    if (drag) {
+      endDrag(inputEnabled);
+    } else if (inputEnabled && pointer.tile && elapsed < TAP_MAX_MS) {
+      callbacks.onTap?.(pointer.tile.id);
+    } else if (inputEnabled && !pointer.tile) {
+      callbacks.onBackgroundGesture?.(point.x - pointer.start.x, point.y - pointer.start.y);
+    }
+    pointer = null;
+  }
+
+  inputEl.addEventListener('pointerup', onPointerEnd);
+  inputEl.addEventListener('pointercancel', onPointerEnd);
+
+  function step(deltaMs) {
+    Engine.update(engine, deltaMs);
+    tiles.forEach((tile, i) => {
+      const { body } = tile;
+      if (body.isStatic) return;
+      if (Body.getSpeed(body) > MAX_SPEED) Body.setSpeed(body, MAX_SPEED);
+      if (tile.visible && isOutside(body.position.x, body.position.y, layout)) {
+        if (drag?.tile === tile) endDrag(false);
+        placeAbove(tile, 0);
+      }
+    });
+  }
+
+  return {
+    step,
+    snap,
+    unsnap,
+    tileStates() {
+      return tiles.map((tile) => ({
+        id: tile.id,
+        letter: tile.letter,
+        x: tile.body.position.x,
+        y: tile.body.position.y,
+        angle: tile.body.angle,
+        snappedField: tile.snappedField,
+        visible: tile.visible,
+      }));
+    },
+    relayout(next) {
+      const factor = next.tileSize / layout.tileSize;
+      layout = next;
+      buildBounds();
+      for (const tile of tiles) {
+        if (factor !== 1) Body.scale(tile.body, factor, factor);
+        if (tile.snappedField !== null) {
+          Body.setPosition(tile.body, fieldCenter(tile.snappedField));
+        } else if (isOutside(tile.body.position.x, tile.body.position.y, layout) || tile.body.position.y > layout.floorY) {
+          placeAbove(tile, 0);
+        }
+      }
+    },
+    setInputEnabled(enabled) {
+      inputEnabled = enabled;
+      if (!enabled) endDrag(false);
+    },
+    setTilesVisible(ids, visible) {
+      for (const id of ids) {
+        const tile = tiles[id];
+        tile.visible = visible;
+        // Hidden tiles must not collide with the visible ones.
+        tile.body.collisionFilter.mask = visible ? 0xffffffff : 0;
+        if (!visible) Body.setStatic(tile.body, true);
+      }
+    },
+    dropTiles(ids) {
+      ids.forEach((id, order) => placeAbove(tiles[id], order));
+    },
+    settle() {
+      for (let i = 0; i < 600; i++) step(STEP_MS);
+    },
+  };
+}
