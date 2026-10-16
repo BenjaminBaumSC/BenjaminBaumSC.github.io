@@ -4,11 +4,14 @@ import { createWordWatcher, fieldLetters, findWord, pickSnapField } from './rule
 import { createPhysics } from './physics.js';
 import { createRenderer } from './render.js';
 import { glowFields, showComicWord, showImpact } from './fx.js';
+import * as hello from './rewards/hello.js';
+import * as ninja from './rewards/ninja.js';
 
 const canvas = document.getElementById('tiles');
 const fieldsEl = document.getElementById('fields');
 const floorEl = document.getElementById('floor');
 const fxEl = document.getElementById('fx');
+const rewardEl = document.getElementById('reward');
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 let layout = computeLayout(window.innerWidth, window.innerHeight);
@@ -16,6 +19,8 @@ let physics = null;
 let renderer = null;
 let fieldEls = [];
 let lastFrame = performance.now();
+let paused = false;
+const REWARDS = { BENNI: hello, NINJA: ninja };
 const wordWatcher = createWordWatcher(SECRET_WORDS);
 
 function drawFields() {
@@ -36,7 +41,22 @@ function currentLetters() {
 }
 
 async function playReward(name, match) {
-  console.info('reward', name, match);
+  physics.setInputEnabled(false);
+  try {
+    await REWARDS[name].play({
+      layer: rewardEl,
+      physics,
+      reducedMotion,
+      match,
+      setPaused: (value) => {
+        paused = value;
+      },
+    });
+  } finally {
+    paused = false;
+    physics.setInputEnabled(true);
+    checkWords();
+  }
 }
 
 function checkWords() {
@@ -80,7 +100,7 @@ function frame(now) {
   const delta = clampDelta(now - lastFrame);
   lastFrame = now;
   if (!layout.portrait) {
-    physics.step(delta);
+    if (!paused) physics.step(delta);
     renderer.sync(physics.tileStates());
   }
   requestAnimationFrame(frame);

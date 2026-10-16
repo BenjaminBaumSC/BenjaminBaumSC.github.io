@@ -209,3 +209,126 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   .impact { display: none; }
 }
+
+.hello {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 18, 40, 0.72);
+  animation: fade-in 300ms ease-out;
+}
+
+.hello.out {
+  opacity: 0;
+  transition: opacity 400ms ease-in;
+}
+
+.hello-line {
+  font: 700 clamp(22px, 4vw, 44px) / 1.2 var(--mono);
+  color: #f2f6ff;
+  text-shadow: 0 0 12px rgba(160, 200, 255, 0.6);
+}
+
+.hello-text {
+  display: inline;
+}
+
+.cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1em;
+  margin-left: 0.08em;
+  vertical-align: -0.12em;
+  background: currentColor;
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+.ninja {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  transition: background-color 400ms ease-out, opacity 500ms ease-in;
+}
+
+.ninja.calm {
+  animation: fade-in 400ms ease-out;
+}
+
+.ninja.vision {
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.28) 0 2px, transparent 2px 4px),
+    radial-gradient(ellipse at center, rgba(40, 255, 80, 0.18) 0%, rgba(0, 25, 0, 0.75) 80%);
+}
+
+.ninja.vision::after {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  opacity: 0.22;
+  background-image:
+    radial-gradient(rgba(180, 255, 180, 0.7) 1px, transparent 1px),
+    radial-gradient(rgba(180, 255, 180, 0.5) 1px, transparent 1px);
+  background-size: 7px 7px, 11px 11px;
+  background-position: 0 0, 3px 5px;
+  animation: noise 0.25s steps(4) infinite;
+}
+
+.ninja.calm.vision::after {
+  animation: none;
+}
+
+@keyframes noise {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-3%, 2%); }
+  50% { transform: translate(2%, -3%); }
+  75% { transform: translate(-2%, -1%); }
+  100% { transform: translate(3%, 3%); }
+}
+
+.ninja.out {
+  opacity: 0;
+}
+
+.goggles {
+  position: absolute;
+  top: 9%;
+  left: 50%;
+  display: flex;
+  gap: 18px;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.goggle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #6bff6b;
+  box-shadow: 0 0 16px #5bff5b, 0 0 40px #5bff5b;
+  animation: goggle-on 300ms ease-out backwards;
+}
+
+.goggle:nth-child(2) { animation-delay: 120ms; }
+.goggle:nth-child(3) { animation-delay: 240ms; }
+
+@keyframes goggle-on {
+  from { opacity: 0; transform: scale(0.3); }
+}
+
+body.nightvision {
+  background-color: #021a06;
+}
+
+body.nightvision #scene > :not(#reward) {
+  filter: grayscale(1) sepia(1) hue-rotate(60deg) saturate(4) brightness(1.1);
+}
