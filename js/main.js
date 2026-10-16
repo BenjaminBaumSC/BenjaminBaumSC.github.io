@@ -117,6 +117,7 @@ function start() {
   drawFields();
   renderer = createRenderer(canvas, layout);
   physics = createPhysics(layout, { onGrab, onRelease, onTap, onBackgroundGesture }, canvas);
+  if (reducedMotion) physics.settle();
   requestAnimationFrame(frame);
 }
 
