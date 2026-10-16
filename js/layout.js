@@ -2,7 +2,7 @@ import { FIELD_COUNT, MAX_FIELD_SIZE, MIN_HIT_SIZE } from './config.js';
 
 const GUTTER = 16;
 // Room below the field row for the drawing's title block.
-const TITLE_BLOCK_SPACE = 68;
+const TITLE_BLOCK_SPACE = 82;
 // Distance from the floor to the top of the field row, in field sizes.
 const ROW_LIFT = 3.2;
 

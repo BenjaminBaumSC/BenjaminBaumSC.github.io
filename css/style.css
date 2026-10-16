@@ -430,3 +430,39 @@ body.nightvision #scene > :not(#reward) {
   color: var(--ink-strong);
   animation: fade-in 800ms ease-out;
 }
+
+#restart {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  z-index: 2;
+  padding: 4px 10px;
+  font: 11px var(--mono);
+  letter-spacing: 0.08em;
+  color: var(--ink-strong);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+}
+
+#restart:hover,
+#restart:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+
+#score {
+  display: inline-block;
+}
+
+#score.bump {
+  animation: score-bump 300ms ease-out;
+}
+
+@keyframes score-bump {
+  40% { transform: scale(1.6); color: #fff; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #score.bump { animation: none; }
+}

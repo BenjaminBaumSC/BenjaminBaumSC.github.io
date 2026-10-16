@@ -1,6 +1,6 @@
-import { FIELD_COUNT, FIELD_PREMIUMS, SECRET_WORDS } from './config.js';
+import { FIELD_COUNT, FIELD_PREMIUMS, POINTS, SECRET_WORDS, TILES } from './config.js';
 import { computeLayout, createStepper } from './layout.js';
-import { createKonamiDetector, createRewardGate, createWordWatcher, fieldLetters, pickSnapField, swipeDirection } from './rules.js';
+import { createKonamiDetector, createRewardGate, createWordWatcher, fieldLetters, pickSnapField, scoreRow, swipeDirection } from './rules.js';
 import { createPhysics } from './physics.js';
 import { createRenderer } from './render.js';
 import { glowFields, showComicWord, showImpact } from './fx.js';
@@ -13,6 +13,10 @@ const fieldsEl = document.getElementById('fields');
 const floorEl = document.getElementById('floor');
 const fxEl = document.getElementById('fx');
 const rewardEl = document.getElementById('reward');
+const scoreEl = document.getElementById('score');
+const revEl = document.getElementById('rev');
+const restartEl = document.getElementById('restart');
+const REV_DRAFT = 'REV: 0.1 · BL. 1/1';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 let layout = computeLayout(window.innerWidth, window.innerHeight);
@@ -26,7 +30,7 @@ let paused = false;
 const rewardGate = createRewardGate();
 const REWARDS = { BENNI: hello, NINJA: ninja, KONAMI: cake };
 const ARROWS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
-const wordWatcher = createWordWatcher(SECRET_WORDS);
+let wordWatcher = createWordWatcher(SECRET_WORDS);
 const konami = createKonamiDetector();
 
 function drawFields() {
@@ -70,7 +74,29 @@ async function playReward(name, match) {
   }
 }
 
+function updateScore() {
+  const score = String(scoreRow(currentLetters(), FIELD_PREMIUMS, POINTS));
+  if (scoreEl.textContent === score) return;
+  scoreEl.textContent = score;
+  scoreEl.classList.remove('bump');
+  // Restart the bump animation on consecutive changes.
+  void scoreEl.offsetWidth;
+  scoreEl.classList.add('bump');
+}
+
+function restart() {
+  if (!physics || rewardGate.active) return;
+  physics.reset(TILES);
+  wordWatcher = createWordWatcher(SECRET_WORDS);
+  konami.reset();
+  revEl.textContent = REV_DRAFT;
+  updateScore();
+}
+
+restartEl.addEventListener('click', restart);
+
 function checkWords() {
+  updateScore();
   const [match] = wordWatcher.update(currentLetters());
   if (match && REWARDS[match.word]) playReward(match.word, match);
 }
