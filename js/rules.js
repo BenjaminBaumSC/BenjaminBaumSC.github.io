@@ -97,3 +97,20 @@ export function fieldLetters(tileStates, fieldCount) {
   }
   return letters;
 }
+
+export function createRewardGate() {
+  let active = false;
+  return {
+    get active() {
+      return active;
+    },
+    tryStart() {
+      if (active) return false;
+      active = true;
+      return true;
+    },
+    finish() {
+      active = false;
+    },
+  };
+}

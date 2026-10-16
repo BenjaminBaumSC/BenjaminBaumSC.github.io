@@ -1,6 +1,6 @@
 import { FIELD_COUNT, FIELD_PREMIUMS, SECRET_WORDS } from './config.js';
 import { computeLayout, clampDelta } from './layout.js';
-import { createKonamiDetector, createWordWatcher, fieldLetters, findWord, pickSnapField, swipeDirection } from './rules.js';
+import { createKonamiDetector, createRewardGate, createWordWatcher, fieldLetters, findWord, pickSnapField, swipeDirection } from './rules.js';
 import { createPhysics } from './physics.js';
 import { createRenderer } from './render.js';
 import { glowFields, showComicWord, showImpact } from './fx.js';
@@ -21,7 +21,7 @@ let renderer = null;
 let fieldEls = [];
 let lastFrame = performance.now();
 let paused = false;
-let rewardPlaying = false;
+const rewardGate = createRewardGate();
 const REWARDS = { BENNI: hello, NINJA: ninja, KONAMI: cake };
 const ARROWS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
 const wordWatcher = createWordWatcher(SECRET_WORDS);
@@ -45,9 +45,11 @@ function currentLetters() {
 }
 
 async function playReward(name, match) {
-  rewardPlaying = true;
+  if (!rewardGate.tryStart()) return;
+  // Lock input before the glow so the row cannot change under the reward.
   physics.setInputEnabled(false);
   try {
+    if (match) await glowFields(fieldEls, Array.from({ length: match.word.length }, (_, i) => match.start + i));
     await REWARDS[name].play({
       layer: rewardEl,
       physics,
@@ -59,7 +61,7 @@ async function playReward(name, match) {
     });
   } finally {
     paused = false;
-    rewardPlaying = false;
+    rewardGate.finish();
     konami.reset();
     physics.setInputEnabled(true);
     checkWords();
@@ -70,9 +72,7 @@ function checkWords() {
   const letters = currentLetters();
   const word = wordWatcher.update(letters);
   if (!word) return;
-  const match = findWord(letters, SECRET_WORDS);
-  const indices = Array.from({ length: match.word.length }, (_, i) => match.start + i);
-  glowFields(fieldEls, indices).then(() => playReward(word, match));
+  playReward(word, findWord(letters, SECRET_WORDS));
 }
 
 function onGrab(tileId) {
@@ -110,7 +110,7 @@ window.addEventListener('keydown', (event) => {
   const direction = ARROWS[event.key];
   if (!direction) return;
   event.preventDefault();
-  if (!rewardPlaying) konami.pushDirection(direction, performance.now());
+  if (!rewardGate.active) konami.pushDirection(direction, performance.now());
 });
 
 function start() {

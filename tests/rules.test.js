@@ -15,6 +15,7 @@ import {
   createKonamiDetector,
   swipeDirection,
   fieldLetters,
+  createRewardGate,
 } from '../js/rules.js';
 
 function row(letters, start = 0) {
@@ -140,4 +141,14 @@ test('fieldLetters maps snapped tiles onto their fields', () => {
   assert.equal(letters.length, 15);
   assert.equal(letters[2], 'B');
   assert.equal(letters.filter((l) => l !== null).length, 1);
+});
+
+test('createRewardGate lets only one reward run at a time', () => {
+  const gate = createRewardGate();
+  assert.equal(gate.tryStart(), true);
+  assert.equal(gate.active, true);
+  assert.equal(gate.tryStart(), false);
+  gate.finish();
+  assert.equal(gate.active, false);
+  assert.equal(gate.tryStart(), true);
 });
