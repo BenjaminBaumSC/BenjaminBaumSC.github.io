@@ -85,6 +85,8 @@ export function createRenderer(canvas, layout) {
   const squashes = new Map();
   // tile id -> { start, cycles } for the La-Ola lift.
   const waves = new Map();
+  // Idle animation: 'tap' wobbles one tile, 'sleep' lets all loose tiles breathe.
+  let idle = { mode: null, tileId: null };
 
   function resize(next) {
     const { width, height } = next;
@@ -146,6 +148,16 @@ export function createRenderer(canvas, layout) {
           mesh.rotation.z += Math.sin(phase * Math.PI * 2) * 0.35;
         }
       }
+      const seconds = performance.now() / 1000;
+      if (idle.mode === 'tap' && state.id === idle.tileId) {
+        const beat = Math.sin(seconds * Math.PI * 4);
+        mesh.rotation.z += beat * 0.12;
+        mesh.position.y += Math.abs(beat) * tileSize * 0.06;
+      } else if (idle.mode === 'sleep' && state.snappedField === null) {
+        const breath = (1 + Math.sin(seconds * 2.2 + state.id)) / 2;
+        mesh.scale.y *= 1 - 0.07 * breath;
+        mesh.position.y -= tileSize * 0.035 * breath;
+      }
     }
     renderer.render(scene, camera);
   }
@@ -161,5 +173,9 @@ export function createRenderer(canvas, layout) {
     tileIds.forEach((id, i) => waves.set(id, { start: now + i * staggerMs, cycles }));
   }
 
-  return { resize, sync, squash, wave };
+  function setIdle(mode, tileId = null) {
+    idle = { mode, tileId };
+  }
+
+  return { resize, sync, squash, wave, setIdle };
 }

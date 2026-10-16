@@ -4,6 +4,7 @@ import { createKonamiDetector, createRewardGate, createWordWatcher, fieldLetters
 import { createPhysics } from './physics.js';
 import { createRenderer } from './render.js';
 import { glowFields, showComicWord, showImpact } from './fx.js';
+import { createIdle } from './idle.js';
 import * as hello from './rewards/hello.js';
 import * as ninja from './rewards/ninja.js';
 import * as cake from './rewards/cake.js';
@@ -62,8 +63,19 @@ function currentLetters() {
   return fieldLetters(physics.tileStates(), FIELD_COUNT);
 }
 
+const idle = createIdle({
+  layer: fxEl,
+  getContext: () => ({ physics, renderer, layout }),
+  isBusy: () => !physics || layout.portrait || rewardGate.active || physics.isPouring(),
+  reducedMotion,
+  comic: (text, x, y) => showComicWord(fxEl, text, x, y, { reducedMotion }),
+});
+// Only real play counts; moving the mouse around keeps the idle show running.
+for (const type of ['pointerdown', 'keydown']) window.addEventListener(type, () => idle.activity(), true);
+
 async function playReward(name, match) {
   if (!rewardGate.tryStart()) return;
+  idle.activity();
   // Lock input before the glow so the row cannot change under the reward.
   physics.setInputEnabled(false);
   try {

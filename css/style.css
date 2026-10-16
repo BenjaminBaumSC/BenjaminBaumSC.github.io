@@ -916,3 +916,76 @@ body.nightvision #scene > :not(#reward) {
 .confetti-rain.calm .flake {
   animation: fade-in-out 3000ms ease forwards;
 }
+
+/* Idle escalation */
+.zzz {
+  position: absolute;
+  font: 900 calc(var(--comic-size, 44px) * 0.7) / 1 "Arial Black", Impact, sans-serif;
+  color: #fff;
+  -webkit-text-stroke: 2px #0d2a52;
+  paint-order: stroke fill;
+  opacity: 0;
+  animation: zzz-rise 2600ms ease-out forwards;
+}
+
+.zzz.calm {
+  animation: fade-in 600ms ease-out forwards;
+}
+
+@keyframes zzz-rise {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.5) rotate(-10deg); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(40px, -120px) scale(1.3) rotate(12deg); }
+}
+
+.press-start {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font: 900 clamp(26px, 5vw, 60px) / 1 "Courier New", monospace;
+  letter-spacing: 0.25em;
+  color: #f5bc0a;
+  text-shadow: 4px 4px 0 #c8423a, 8px 8px 0 #0d2a52;
+  animation: blink 1s steps(1) infinite;
+}
+
+.press-start.calm {
+  animation: none;
+}
+
+.pacman,
+.ghost {
+  position: absolute;
+  left: 0;
+  will-change: transform;
+}
+
+.pacman svg,
+.ghost svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.pacman .jaw {
+  fill: #f5bc0a;
+  transform-origin: 50px 50px;
+}
+
+.pacman .jaw.top { animation: chomp-top 260ms ease-in-out infinite alternate; }
+.pacman .jaw.bottom { animation: chomp-bottom 260ms ease-in-out infinite alternate; }
+.pacman .eye { fill: #0d2a52; }
+
+@keyframes chomp-top {
+  from { transform: rotate(-35deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes chomp-bottom {
+  from { transform: rotate(35deg); }
+  to { transform: rotate(0deg); }
+}
+
+.ghost .body { fill: #e74266; }
+.ghost .eye-white { fill: #fff; }
+.ghost .pupil { fill: #2f6db5; }

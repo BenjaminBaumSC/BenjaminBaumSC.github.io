@@ -332,6 +332,15 @@ export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILE
     addTiles(defs) {
       addTiles(defs);
     },
+    isPouring() {
+      return bagQueue.length > 0;
+    },
+    hopTile(id) {
+      const tile = byId(id);
+      if (!tile || !tile.visible || tile.snappedField !== null || tile.body.isStatic) return;
+      Body.setVelocity(tile.body, { x: (Math.random() - 0.5) * 3, y: -7 - Math.random() * 4 });
+      Body.setAngularVelocity(tile.body, (Math.random() - 0.5) * 0.5);
+    },
     removeTiles(ids) {
       const removed = tiles.filter((tile) => ids.includes(tile.id));
       Composite.remove(engine.world, removed.map((tile) => tile.body));
