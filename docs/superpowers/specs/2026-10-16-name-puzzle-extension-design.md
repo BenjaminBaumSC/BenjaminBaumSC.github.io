@@ -70,6 +70,20 @@ Die Erkennung funktioniert wie bei BENNI und NINJA: zusammenhängend, links und 
 - Eine Comic-Sprechblase am Schaf sagt **„The fence is a lie.“**, der Spruch von ben32.de. Dazu kommt ein Comic-„MÄH!“. Nach etwa drei Sekunden kippt das Panel aus dem Bild.
 - Das Schaf wird nicht einzeln animiert, weil die Grafik eine vollständige Illustration mit Hintergrund ist.
 
+## 5. BENNI-Party (ersetzt „Hallo, Freund“, 16.10.2026)
+
+Die BENNI-Belohnung wird zur Party (Benjamin, 16.10.2026). Sie dauert etwa acht Sekunden:
+
+1. **Begrüßung:** Über der Leiste ploppt groß und im Comic-Stil **„HALLO, FREUND!“** auf, Buchstabe für Buchstabe mit Überschwinger.
+2. **Party-Steine:** Der Beutel erscheint und schüttet fünf komplett farbige Steine **P, A, R, T, Y** aus. Sie haben einen weißen Buchstaben und den Punktwert, die Farben sind Rot `#c8423a`, Blau `#2f6db5`, Gelb `#f5bc0a`, Türkis `#20b69e` und Pink `#e74266`.
+3. **La-Ola:** Die fünf BENNI-Steine heben sich nacheinander aus ihren Feldern, kippen kurz und setzen sich wieder. Die Welle läuft zweimal.
+4. **Applaus:** Alle freien Steine, Party-Steine eingeschlossen, hüpfen dreimal durcheinander wie ein jubelndes Publikum.
+5. **Konfetti-Regen:** Konfetti rieselt von oben über die ganze Breite und flattert dabei seitlich.
+6. **Herz:** Alle freien Steine fliegen hoch und ordnen sich gleichmäßig verteilt über der Leiste zu einem Herz. Das hält etwa eine Sekunde, dann fallen sie wieder herunter.
+7. **Abschied:** Die Party-Steine zerplatzen mit einem „PLOPP!“ und verschwinden. *(Claudes Entscheidung: sonst lägen P, R und Y ohne Geheimwort herum und verfälschten den Zähler.)* BENNI bleibt in der Leiste liegen.
+
+Bei Reduced Motion erscheinen nur der Text und ruhig eingeblendetes Konfetti, ohne Party-Steine, Welle, Applaus und Herz.
+
 ## Technik
 
 - Weiterhin keine neuen Dependencies, kein Build und keine Web-Fonts.
