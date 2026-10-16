@@ -10,8 +10,12 @@ const WALL = 200;
 const STEP_MS = 1000 / 60;
 const SPEED_WINDOW_MS = 80;
 const COLLIDE_ALL = 0xffffffff;
+// A narrow drop zone makes some tiles land on top of each other.
+const NAME_DROP = 0.45;
+// Delivered tiles spread over the whole width so they fit below the rack.
+const DELIVERY_DROP = 0.9;
 
-export function createPhysics(initialLayout, callbacks, inputEl) {
+export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILES) {
   const engine = Engine.create();
   engine.positionIterations = 10;
   engine.velocityIterations = 8;
@@ -22,15 +26,17 @@ export function createPhysics(initialLayout, callbacks, inputEl) {
   let pointer = null;
   let drag = null;
 
-  const tiles = TILES.map((tile) => ({
-    ...tile,
-    body: createTileBody(layout.tileSize),
-    snappedField: null,
-    visible: true,
-  }));
-  Composite.add(engine.world, tiles.map((t) => t.body));
+  // Indexed by tile id; extra tiles are appended in id order.
+  let tiles = [];
   buildBounds();
-  tiles.forEach((tile, i) => placeAbove(tile, i));
+  addTiles(tileDefs, NAME_DROP);
+
+  function addTiles(defs, spanFraction) {
+    const added = defs.map((def) => ({ ...def, body: createTileBody(layout.tileSize), snappedField: null, visible: true }));
+    tiles = [...tiles, ...added];
+    Composite.add(engine.world, added.map((t) => t.body));
+    added.forEach((tile, i) => placeAbove(tile, i, i, added.length, spanFraction));
+  }
 
   function createTileBody(size) {
     return Bodies.rectangle(0, 0, size, size, {
@@ -53,11 +59,10 @@ export function createPhysics(initialLayout, callbacks, inputEl) {
     Composite.add(engine.world, bounds);
   }
 
-  function placeAbove(tile, order) {
+  function placeAbove(tile, order, slot = tile.id % TILES.length, slots = TILES.length, spanFraction = NAME_DROP) {
     const { width, tileSize } = layout;
-    // A narrow drop zone makes some tiles land on top of each other.
-    const span = width * 0.45;
-    const x = (width - span) / 2 +(span * (tile.id + 0.5)) / tiles.length + (Math.random() - 0.5) * tileSize * 0.6;
+    const span = width * spanFraction;
+    const x = (width - span) / 2 + (span * (slot + 0.5)) / slots + (Math.random() - 0.5) * tileSize * 0.6;
     Body.setStatic(tile.body, false);
     Body.setPosition(tile.body, { x, y: -tileSize * (1 + order * 0.7) });
     Body.setAngle(tile.body, (Math.random() - 0.5) * 0.8);
@@ -263,6 +268,16 @@ export function createPhysics(initialLayout, callbacks, inputEl) {
     },
     dropTiles(ids) {
       ids.forEach((id, order) => placeAbove(tiles[id], order));
+    },
+    addTiles(defs) {
+      addTiles(defs, DELIVERY_DROP);
+    },
+    reset(defs) {
+      endDrag(false);
+      pointer = null;
+      Composite.remove(engine.world, tiles.map((t) => t.body));
+      tiles = [];
+      addTiles(defs, NAME_DROP);
     },
     settle() {
       for (let i = 0; i < 600; i++) step(STEP_MS);

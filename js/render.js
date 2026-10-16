@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { TILES } from './config.js';
+import { POINTS } from './config.js';
 
 const TILE_DEPTH = 0.32;
 const FOV = 30;
@@ -57,16 +57,19 @@ export function createRenderer(canvas, layout) {
 
   const geometry = new RoundedBoxGeometry(1, 1, TILE_DEPTH, 4, 0.1);
   const sideMaterial = new THREE.MeshStandardMaterial({ color: WOOD_SIDE, roughness: 0.7 });
-  const meshes = new Map(
-    TILES.map((tile) => {
-      const front = new THREE.MeshStandardMaterial({ map: letterTexture(tile.letter, tile.points), roughness: 0.6 });
+  const meshes = new Map();
+
+  function meshFor(state) {
+    if (!meshes.has(state.id)) {
+      const front = new THREE.MeshStandardMaterial({ map: letterTexture(state.letter, POINTS[state.letter]), roughness: 0.6 });
       // BoxGeometry material order: +x, -x, +y, -y, +z (front), -z.
       const mesh = new THREE.Mesh(geometry, [sideMaterial, sideMaterial, sideMaterial, sideMaterial, front, sideMaterial]);
       mesh.castShadow = true;
       scene.add(mesh);
-      return [tile.id, mesh];
-    }),
-  );
+      meshes.set(state.id, mesh);
+    }
+    return meshes.get(state.id);
+  }
 
   let tileSize = layout.tileSize;
   const squashes = new Map();
@@ -99,8 +102,10 @@ export function createRenderer(canvas, layout) {
   }
 
   function sync(tileStates) {
+    // Tiles removed by a restart keep their mesh but stay hidden.
+    for (const mesh of meshes.values()) mesh.visible = false;
     for (const state of tileStates) {
-      const mesh = meshes.get(state.id);
+      const mesh = meshFor(state);
       mesh.visible = state.visible;
       // Loose tiles move in front of the rack so they never clip snapped ones.
       mesh.position.set(state.x, -state.y, state.snappedField === null ? TILE_DEPTH * tileSize : 0);
