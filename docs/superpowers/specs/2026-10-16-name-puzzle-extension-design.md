@@ -29,6 +29,12 @@ Das Puzzle bekommt drei Erweiterungen: einen Punktezähler, einen Neustart-Butto
 - Ein Klick setzt alles zurück, wie beim ersten Laden: Die Leiste wird geleert, es gibt wieder nur die zwölf Grundsteine, und alle fallen neu von oben ein. Der Zähler steht auf 0, im Schriftfeld steht wieder `REV: 0.1 · BL. 1/1`, und eine angefangene Konami-Eingabe wird verworfen (Benjamin, 16.10.2026).
 - Während einer Belohnung tut der Button nichts.
 
+## 2a. Leiste sprengen
+
+- Neben `NEU ZEICHNEN` sitzt ein zweiter Button `LEISTE SPRENGEN` im selben Stil (Benjamin, 16.10.2026).
+- Ein Klick schleudert alle eingerasteten Steine mit Wucht aus der Leiste. Dazu kommen Speedlines an jedem Feld, die Szene wackelt, und ein Comic-„KAWUMM!“ erscheint. Die Steine fallen danach wieder auf den Boden. Alles andere bleibt erhalten: freigeschaltete Steine, REV-Stand, keine neue Runde.
+- Bei leerer Leiste und während einer Belohnung tut der Button nichts. Bei Reduced Motion fallen die Steine nur heraus, ohne Wackeln und ohne Speedlines.
+
 ## 3. BENJAMIN BAUM → Freigabe
 
 - **Auslöser:** In der Leiste liegen nacheinander BENJAMIN, **genau ein** leeres Feld und BAUM, links und rechts begrenzt durch ein leeres Feld oder den Rand der Leiste. Das braucht 13 der 15 Felder. *(Erkennung: Claudes Entscheidung)*
@@ -49,7 +55,7 @@ Die Erkennung funktioniert wie bei BENNI und NINJA: zusammenhängend, links und 
 | BEN32 | Comic-Schaf Ben32 aus dem eingestellten Comic Jump42 | 3, 2 |
 
 ### MINI
-- Ein Mini Cooper (R50/R53, Seitenansicht) als **Blaupausen-Strichzeichnung** in Weiß fährt von links nach rechts quer durchs Bild, etwa auf Höhe der Bodenlinie. Die Räder drehen sich, hinten puffen ein paar Abgaswölkchen, dazu ein Comic-„BRUMM!“. Die Zeichnung erstellt Claude als eigenes SVG.
+- Ein Mini Cooper in Seitenansicht fährt als weiße Silhouette von links nach rechts quer durchs Bild, etwa auf Höhe der Bodenlinie. Die Räder drehen sich (Speichen), hinten puffen ein paar Abgaswölkchen, dazu ein Comic-„BRUMM!“. Die Grafik ist das Noun-Project-Icon „Mini Cooper“ von kiddo, das Benjamin geliefert hat (16.10.2026, ersetzt Claudes eigene Zeichnung). Es steht unter CC BY 3.0, deshalb steht unter dem Auto klein der Credit `Icon: kiddo / Noun Project`.
 - Während der Wagen durch die Mitte fährt, erscheint groß in der Bildmitte das **originale MINI-Logo** in Weiß. Die Flügel klappen auf, indem es horizontal von 0 auf volle Breite aufgezogen wird, mit kurzem Überschwinger. Danach blendet es aus. Quelle: [File:MINI logo.svg](https://commons.wikimedia.org/wiki/File:MINI_logo.svg), Wikimedia Commons. Die Commons-Metadaten bleiben in der Datei erhalten. Benjamin hat entschieden, das Original-Logo trotz Markenrecht zu verwenden, wie es auf Fanseiten üblich ist (16.10.2026).
 
 ### CODUMO

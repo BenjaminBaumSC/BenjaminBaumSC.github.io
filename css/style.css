@@ -431,11 +431,16 @@ body.nightvision #scene > :not(#reward) {
   animation: fade-in 800ms ease-out;
 }
 
-#restart {
+.controls {
   position: absolute;
   top: 12px;
   right: 16px;
   z-index: 2;
+  display: flex;
+  gap: 8px;
+}
+
+.controls button {
   padding: 4px 10px;
   font: 11px var(--mono);
   letter-spacing: 0.08em;
@@ -445,8 +450,8 @@ body.nightvision #scene > :not(#reward) {
   cursor: pointer;
 }
 
-#restart:hover,
-#restart:focus-visible {
+.controls button:hover,
+.controls button:focus-visible {
   background: rgba(255, 255, 255, 0.12);
   outline: none;
 }
@@ -533,15 +538,29 @@ body.nightvision #scene > :not(#reward) {
 .mini-car svg {
   display: block;
   width: 100%;
-  fill: none;
-  stroke: #fff;
-  stroke-width: 3;
-  stroke-linejoin: round;
-  stroke-linecap: round;
+  /* The source drawing faces left; the car drives to the right. */
+  transform: scaleX(-1);
+}
+
+.mini-car svg path {
+  fill: #fff;
 }
 
 .mini-car .wheel {
+  stroke: #1d4f91;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: center;
   animation: wheel-spin 500ms linear infinite;
+}
+
+.mini-credit {
+  margin-top: 2px;
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.55);
 }
 
 @keyframes drive {
@@ -556,7 +575,7 @@ body.nightvision #scene > :not(#reward) {
 .mini-puff {
   position: absolute;
   left: 0;
-  bottom: 14%;
+  bottom: 30%;
   width: 18px;
   height: 18px;
   border: 2px solid rgba(255, 255, 255, 0.7);

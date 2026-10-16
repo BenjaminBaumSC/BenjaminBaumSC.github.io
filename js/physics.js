@@ -269,6 +269,16 @@ export function createPhysics(initialLayout, callbacks, inputEl, tileDefs = TILE
     dropTiles(ids) {
       ids.forEach((id, order) => placeAbove(tiles[id], order));
     },
+    // Launches every snapped tile out of the rack; calm keeps them from flying.
+    blast(calm) {
+      for (const tile of tiles) {
+        if (tile.snappedField === null) continue;
+        unsnap(tile.id);
+        if (calm) continue;
+        Body.setVelocity(tile.body, { x: (Math.random() - 0.5) * 28, y: -12 - Math.random() * 12 });
+        Body.setAngularVelocity(tile.body, (Math.random() - 0.5) * 0.8);
+      }
+    },
     addTiles(defs) {
       addTiles(defs, DELIVERY_DROP);
     },

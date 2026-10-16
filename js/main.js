@@ -21,6 +21,7 @@ const rewardEl = document.getElementById('reward');
 const scoreEl = document.getElementById('score');
 const revEl = document.getElementById('rev');
 const restartEl = document.getElementById('restart');
+const clearRowEl = document.getElementById('clear-row');
 const REV_DRAFT = 'REV: 0.1 · BL. 1/1';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -115,6 +116,30 @@ function restart() {
 }
 
 restartEl.addEventListener('click', restart);
+
+function blastRow() {
+  if (!physics || rewardGate.active) return;
+  const snapped = physics.tileStates().filter((tile) => tile.snappedField !== null);
+  if (snapped.length === 0) return;
+  for (const tile of snapped) {
+    const rect = layout.fieldRects[tile.snappedField];
+    if (!reducedMotion) showImpact(fxEl, rect.x + rect.w / 2, rect.y + rect.h / 2, layout.tileSize * 2.2);
+  }
+  physics.blast(reducedMotion);
+  if (!reducedMotion) {
+    const scene = document.getElementById('scene');
+    scene.classList.remove('shake');
+    void scene.offsetWidth;
+    scene.classList.add('shake');
+  }
+  const fields = snapped.map((tile) => tile.snappedField);
+  const first = layout.fieldRects[Math.min(...fields)];
+  const last = layout.fieldRects[Math.max(...fields)];
+  showComicWord(fxEl, 'KAWUMM!', (first.x + last.x + last.w) / 2, first.y - layout.tileSize * 0.3, { reducedMotion });
+  checkWords();
+}
+
+clearRowEl.addEventListener('click', blastRow);
 
 function checkWords() {
   updateScore();
